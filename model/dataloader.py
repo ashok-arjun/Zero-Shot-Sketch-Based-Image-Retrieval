@@ -37,7 +37,7 @@ def label2index(labels):
 
 class QuickDrawTestDataset(torch.utils.data.Dataset):
   def __init__(self, zip_file, labels, label_to_index, embedding, section, transforms = None):
-    self.zip_file = images_zip_file
+    self.zip_file = zip_file
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding # not used
@@ -151,7 +151,7 @@ class Dataloaders:
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
                                                   num_workers = 4) 
-    return train_dataloader
+    return train_dataloader, self.train_dict
 
 
   def get_test_dataloader(self, batch_size, section, shuffle = False):
@@ -161,7 +161,7 @@ class Dataloaders:
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
                                                   num_workers = 1)
-    return test_dataloader                                              
+    return test_dataloader, self.test_dict                                              
 
 
   def get_zip_file(self, path):
