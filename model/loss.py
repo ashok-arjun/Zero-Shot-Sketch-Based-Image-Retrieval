@@ -60,7 +60,7 @@ class SemanticLoss(nn.Module):
 
 class DomainLoss(nn.Module):
   '''
-  Domain loss for the domain prediction(this acts as an adversary to our main model) 
+  Domain loss for the domain prediction(this acts as a domain adversary to our main model by means of the GRL) 
   '''
 
   def __init__(self, input_size = 300, hidden_size = 1024):
@@ -78,8 +78,8 @@ class DomainLoss(nn.Module):
     )
 
   def forward(self, input, target):
-    input = F.sigmoid(self.net(input)).squeeze()
-    return F.binary_cross_entropy(cosine_loss(input, target))
+    input = torch.sigmoid(self.net(input)).squeeze()
+    return F.binary_cross_entropy(input, target)
 
 
 class DetangledJointDomainLoss(nn.Module):
@@ -107,11 +107,11 @@ class DetangledJointDomainLoss(nn.Module):
 
     loss_triplet = self.triplet_loss(anchor_output, positive_output, negative_output)
 
-    '''Create targets for the domain loss(adversarial for the main model - as imposed by the GRL after every output)'''
+    # Create targets for the domain loss(adversarial for the main model - as imposed by the GRL after every output)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     batch_size = anchor_output.shape[0]
     targets_sketch = torch.zeros(batch_size)
-    targets_photos = torch.zeros(batch_size)
+    targets_photos = torch.ones(batch_size)
 
     if epoch < 5:
       lmbda = 0
@@ -127,7 +127,7 @@ class DetangledJointDomainLoss(nn.Module):
 
     total_loss = self.w_dom * loss_domain + self.w_sem * loss_semantic + self.w_triplet * loss_triplet # Our network minimizes this loss
 
-    return total_loss
+    return total_loss, loss_domain, loss_triplet, loss_semantic
 
 
 
