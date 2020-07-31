@@ -167,7 +167,7 @@ class Dataloaders:
   def get_zip_file(self, path):
     input_zip = ZipFile(path)
     data = {name: input_zip.read(name) for name in input_zip.namelist()}
-    return data   
+    return data     
 
 
 
