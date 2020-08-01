@@ -1,15 +1,8 @@
 alarm_clock
-car
 door
-guitar
-hedgehog
 helicopter
 lion
 mountain
 pineapple
 saw
-sink
-squirrel
-tiger
-violin
 windmill

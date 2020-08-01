@@ -1,5 +1,4 @@
-#TODO: write metrics to wandb, save checkpoint, best metric - only test(as triplets), save images for attention viz,
-# 
+#TODO: write metrics to wandb, save checkpoint, best metric - only test(as triplets), save images for attention viz
 
 
 import time
@@ -22,8 +21,8 @@ from evaluate import evaluate
 from utils import *
 
 class Trainer():
-  def __init__(self, data_dir = 'data'):
-    self.dataloaders = Dataloaders(data_dir)
+  def __init__(self, data_dir, dataloaders):
+    self.dataloaders = dataloaders # temporary, to save time
     self.train_dict = self.dataloaders.train_dict
     self.test_dict = self.dataloaders.test_dict
   
@@ -47,13 +46,13 @@ class Trainer():
     print('A total of %d parameters in present model' % (len(params)))
     #TODO: try different optimizers for different models
 
-    optimizer = torch.optim.Adam(params, config['lr'])
+    optimizer = torch.optim.Adam(params, lr=config['lr'])
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
     print('Training...')    
-
+    return
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_loss_total = RunningAverage()
       accumulated_loss_dom = RunningAverage()

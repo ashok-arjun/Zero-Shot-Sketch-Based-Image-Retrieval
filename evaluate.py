@@ -10,7 +10,6 @@ import torch.nn as nn
 import wandb
 
 from model.net import MainModel
-from utils import *
 
 def stack_into_tensor(list_x):
   '''Takes a list of batched tensors, stacks them and reshapes them to (num_items, 1)'''
