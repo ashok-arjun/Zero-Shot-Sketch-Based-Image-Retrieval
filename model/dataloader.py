@@ -147,7 +147,7 @@ class Dataloaders:
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
                                                   num_workers = 4) 
-    return train_dataloader, self.train_dict
+    return train_dataloader
 
 
   def get_test_dataloader(self, batch_size, section, shuffle = False):
@@ -159,7 +159,7 @@ class Dataloaders:
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
                                                   num_workers = 1)
-    return test_dataloader, self.test_dict                                              
+    return test_dataloader                                              
 
 
 
