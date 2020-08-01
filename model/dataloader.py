@@ -16,7 +16,7 @@ def get_data_list(data_dir, labels, label_to_index, data_type):
     data_type_dir = 'QuickDraw_images_final'
   elif data_type == 'sketches': 
     ext = '*.png'
-    data_type_dir = 'QuickDraw_images_final'
+    data_type_dir = 'QuickDraw_sketches_final'
 
   filenames = []
   classes = []    
