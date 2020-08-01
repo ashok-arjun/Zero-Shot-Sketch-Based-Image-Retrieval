@@ -1,4 +1,4 @@
-#TODO: write metrics to wandb, save checkpoint, best metric - only test(as triplets), save images for attention viz
+# TODO: write metrics to wandb, save checkpoint, best metric - only test(as triplets), save images for attention viz
 
 
 import time
