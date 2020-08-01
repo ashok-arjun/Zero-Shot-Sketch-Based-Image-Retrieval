@@ -127,7 +127,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
 
 
 class Dataloaders:
-  def __init__(self, data_dir = 'data'):
+  def __init__(self, data_dir, files_dir):
     self.train_labels = open(os.path.join(data_dir, 'train_labels.txt')).read().splitlines() 
     self.train_dict = label2index(self.train_labels)
     self.train_label_embeddings = np.load(os.path.join(data_dir,'train_embeddings.npy'))
@@ -136,9 +136,9 @@ class Dataloaders:
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
 
-    self.train_dataset = QuickDrawTrainDataset(data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
-    self.test_dataset_images = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
-    self.test_dataset_sketches = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
+    self.train_dataset = QuickDrawTrainDataset(files_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
+    self.test_dataset_images = QuickDrawTestDataset(files_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
+    self.test_dataset_sketches = QuickDrawTestDataset(files_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
 
 
   def get_train_dataloader(self, batch_size, shuffle = True):
