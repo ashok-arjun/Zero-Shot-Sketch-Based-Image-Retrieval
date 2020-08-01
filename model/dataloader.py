@@ -27,6 +27,24 @@ def get_data_list(data_dir, labels, label_to_index, data_type):
 
   return filenames, classes  
 
+
+def get_data_list_compressed(zip_file, labels, label_to_index, data_type):
+  if data_type == 'images':
+    ext = '.jpg'
+    data_type_dir = 'QuickDraw_images_final'
+  elif data_type == 'sketches': 
+    ext = '.png'
+    data_type_dir = 'QuickDraw_sketches_final'
+
+  filenames = []
+  classes = []    
+  for label in labels:
+    cur_label_filenames = [fn for fn in zip_file.namelist() if fn.startswith(os.path.join(data_type_dir, label)) and fn.endswith(ext)]
+    filenames.extend(cur_label_filenames)
+    classes.extend([label_to_index[label]] * len(cur_label_filenames))
+
+  return filenames, classes    
+
 def get_random_image(image_label_indices, image_filenames, label_idx):
   indices = [i for i,label in enumerate(image_label_indices) if label == label_idx]
   return image_filenames[np.random.choice(indices, 1)[0]] 
@@ -37,13 +55,18 @@ def label2index(labels):
   return d
 
 class QuickDrawTestDataset(torch.utils.data.Dataset):
-  def __init__(self, data_dir, labels, label_to_index, embedding, section, transforms = None):
+  def __init__(self, path, labels, label_to_index, embedding, section, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding # not used
     self.transforms = transforms
-
-    self.filenames, self.label_idxs = get_data_list(os.path.join(data_dir), self.labels, self.label_to_index, section) 
+    self.section = section
+    self.path = path
+    
+    if section == 'images':
+      self.filenames, self.label_idxs = get_data_list_compressed(path, self.labels, self.label_to_index, section) 
+    else section == 'sketches':
+      self.filenames, self.label_idxs = get_data_list(path, self.labels, self.label_to_index, section) 
 
   def __getitem__(self, idx):
     '''
@@ -54,7 +77,10 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
     filename = self.filenames[idx]
     label_idx = self.label_idxs[idx]
 
-    image = Image.open(filename).convert('RGB').resize((224,224))
+    if self.section == 'images':
+      image = Image.open(BytesIO(self.path.read(filename))).convert('RGB').resize((224,224))
+    else:
+      image = Image.open(filename).convert('RGB').resize((224,224))
 
     '''TRANSFORMS'''
     if self.transforms:
@@ -68,13 +94,14 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
 
 
 class QuickDrawTrainDataset(torch.utils.data.Dataset):
-  def __init__(self, data_dir, labels, label_to_index, embedding, transforms = None):
+  def __init__(self, data_dir, labels, label_to_index, embedding, images_zip_file, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding
     self.transforms = transforms
+    self.images_zip_file = images_zip_file
 
-    self.image_filenames, self.image_label_idxs = get_data_list(os.path.join(data_dir), self.labels, self.label_to_index, 'images') 
+    self.image_filenames, self.image_label_idxs = get_data_list_compressed(images_zip_file, self.labels, self.label_to_index, 'images') 
     self.sketch_filenames, self.sketch_label_idxs = get_data_list(os.path.join(data_dir), self.labels, self.label_to_index, 'sketches') 
 
     self.word_vectors_similarity = np.exp(-np.square(cdist(self.embedding, self.embedding, metric = 'euclidean'))/0.1) # 0.1 is temperature
@@ -93,7 +120,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     sketch_image = Image.open(filename).convert('RGB').resize((224,224))
 
     '''POSITIVE IMAGE'''
-    positive_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = label_idx)).convert('RGB').resize((224,224))  
+    positive_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = label_idx)))).convert('RGB').resize((224,224))  
 
     '''NEGATIVE IMAGE'''
     current_label_similarities = self.word_vectors_similarity[label_idx]
@@ -102,7 +129,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     negative_labels_similarities_norms = np.linalg.norm(negative_labels_similarities, ord = 1) # Returns sum over absolute values
     negative_labels_similarities /= negative_labels_similarities_norms
     chosen_negative_label_idx = np.random.choice(negative_labels, 1, p = negative_labels_similarities)[0]
-    negative_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = chosen_negative_label_idx)).convert('RGB').resize((224,224)) 
+    negative_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = chosen_negative_label_idx)))).convert('RGB').resize((224,224)) 
 
 
     '''EMBEDDING'''
@@ -127,6 +154,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
 
 
 class Dataloaders:
+  # if zip file is there, it must be present in the data_dir, here it is taken as yes
   def __init__(self, data_dir, files_dir):
     self.train_labels = open(os.path.join(data_dir, 'train_labels.txt')).read().splitlines() 
     self.train_dict = label2index(self.train_labels)
@@ -136,8 +164,8 @@ class Dataloaders:
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
 
-    self.train_dataset = QuickDrawTrainDataset(files_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
-    self.test_dataset_images = QuickDrawTestDataset(files_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
+    self.train_dataset = QuickDrawTrainDataset(files_dir, self.train_labels, self.train_dict, self.train_label_embeddings, os.path.join(data_dir, 'QuickDraw_images_split.zip'), transforms = get_train_transforms())
+    self.test_dataset_images = QuickDrawTestDataset(os.path.join(data_dir, 'QuickDraw_images_split.zip'), self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
     self.test_dataset_sketches = QuickDrawTestDataset(files_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
 
 
