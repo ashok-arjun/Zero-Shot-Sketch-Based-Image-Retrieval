@@ -21,8 +21,8 @@ from evaluate import evaluate
 from utils import *
 
 class Trainer():
-  def __init__(self, data_dir, dataloaders):
-    self.dataloaders = dataloaders # temporary, to save time
+  def __init__(self, data_dir):
+    self.dataloaders = Dataloaders(data_dir)
     self.train_dict = self.dataloaders.train_dict
     self.test_dict = self.dataloaders.test_dict
   
