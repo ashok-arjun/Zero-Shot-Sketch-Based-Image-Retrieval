@@ -31,7 +31,7 @@ class Trainer():
     batch_size = config['batch_size']
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    train_dataloader = self.dataloaders.get_train_dataloader(batch_size = batch_size) 
+    train_dataloader, train_dict = self.dataloaders.get_train_dataloader(batch_size = batch_size) 
     num_batches = len(train_dataloader) 
 
     image_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
