@@ -44,11 +44,11 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
     self.transforms = transforms
         
     if section == 'images':
-      self.zip_file = os.path.join(data_dir, 'QuickDraw_images_split.zip')
+      self.zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_images_split.zip'))
       self.filenames, self.label_idxs = get_data_list_compressed(self.zip_file, self.labels, self.label_to_index, section) 
-    else section == 'sketches':
-      self.zip_file = os.path.join(data_dir, 'QuickDraw_sketches_final.zip')
-      self.filenames, self.label_idxs = get_data_list(self.zip_file, self.labels, self.label_to_index, section) 
+    elif section == 'sketches':
+      self.zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_sketches_final.zip'))
+      self.filenames, self.label_idxs = get_data_list_compressed(self.zip_file, self.labels, self.label_to_index, section) 
 
   def __getitem__(self, idx):
     '''
@@ -78,8 +78,8 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     self.label_to_index = label_to_index
     self.embedding = embedding
     self.transforms = transforms
-    self.images_zip_file = os.join(data_dir, 'QuickDraw_images_split.zip')
-    self.sketches_zip_file = os.join(data_dir, 'QuickDraw_sketches_final.zip')
+    self.images_zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_images_split.zip'))
+    self.sketches_zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_sketches_final.zip'))
 
 
     self.image_filenames, self.image_label_idxs = get_data_list_compressed(self.images_zip_file, self.labels, self.label_to_index, 'images') 
@@ -98,7 +98,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     label_idx = self.sketch_label_idxs[idx]
 
     '''SKETCH IMAGE'''
-    sketch_image = Image.open(BytesIO(self.images_zip_file.read(filename))).convert('RGB').resize((224,224))
+    sketch_image = Image.open(BytesIO(self.sketches_zip_file.read(filename))).convert('RGB').resize((224,224))
 
     '''POSITIVE IMAGE'''
     positive_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = label_idx)))).convert('RGB').resize((224,224))  
