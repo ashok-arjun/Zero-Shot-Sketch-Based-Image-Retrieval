@@ -10,24 +10,6 @@ import glob
 import torchvision
 import torchvision.transforms as T
 
-def get_data_list(data_dir, labels, label_to_index, data_type):
-  if data_type == 'images':
-    ext = '*.jpg'
-    data_type_dir = 'QuickDraw_images_final'
-  elif data_type == 'sketches': 
-    ext = '*.png'
-    data_type_dir = 'QuickDraw_sketches_final'
-
-  filenames = []
-  classes = []    
-  for label in labels:
-    cur_label_filenames = glob.glob(os.path.join(data_dir, data_type_dir, label, ext))
-    filenames.extend(cur_label_filenames)
-    classes.extend([label_to_index[label]] * len(cur_label_filenames))
-
-  return filenames, classes  
-
-
 def get_data_list_compressed(zip_file, labels, label_to_index, data_type):
   if data_type == 'images':
     ext = '.jpg'
@@ -55,18 +37,18 @@ def label2index(labels):
   return d
 
 class QuickDrawTestDataset(torch.utils.data.Dataset):
-  def __init__(self, path, labels, label_to_index, embedding, section, transforms = None):
+  def __init__(self, data_dir, labels, label_to_index, embedding, section, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding # not used
     self.transforms = transforms
-    self.section = section
-    self.path = path
-    
+        
     if section == 'images':
-      self.filenames, self.label_idxs = get_data_list_compressed(path, self.labels, self.label_to_index, section) 
+      self.zip_file = os.path.join(data_dir, 'QuickDraw_images_split.zip')
+      self.filenames, self.label_idxs = get_data_list_compressed(self.zip_file, self.labels, self.label_to_index, section) 
     else section == 'sketches':
-      self.filenames, self.label_idxs = get_data_list(path, self.labels, self.label_to_index, section) 
+      self.zip_file = os.path.join(data_dir, 'QuickDraw_sketches_final.zip')
+      self.filenames, self.label_idxs = get_data_list(self.zip_file, self.labels, self.label_to_index, section) 
 
   def __getitem__(self, idx):
     '''
@@ -77,10 +59,7 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
     filename = self.filenames[idx]
     label_idx = self.label_idxs[idx]
 
-    if self.section == 'images':
-      image = Image.open(BytesIO(self.path.read(filename))).convert('RGB').resize((224,224))
-    else:
-      image = Image.open(filename).convert('RGB').resize((224,224))
+    image = Image.open(BytesIO(self.zip_file.read(filename))).convert('RGB').resize((224,224))
 
     '''TRANSFORMS'''
     if self.transforms:
@@ -94,15 +73,17 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
 
 
 class QuickDrawTrainDataset(torch.utils.data.Dataset):
-  def __init__(self, data_dir, labels, label_to_index, embedding, images_zip_file, transforms = None):
+  def __init__(self, data_dir, labels, label_to_index, embedding, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding
     self.transforms = transforms
-    self.images_zip_file = images_zip_file
+    self.images_zip_file = os.join(data_dir, 'QuickDraw_images_split.zip')
+    self.sketches_zip_file = os.join(data_dir, 'QuickDraw_sketches_final.zip')
 
-    self.image_filenames, self.image_label_idxs = get_data_list_compressed(images_zip_file, self.labels, self.label_to_index, 'images') 
-    self.sketch_filenames, self.sketch_label_idxs = get_data_list(os.path.join(data_dir), self.labels, self.label_to_index, 'sketches') 
+
+    self.image_filenames, self.image_label_idxs = get_data_list_compressed(self.images_zip_file, self.labels, self.label_to_index, 'images') 
+    self.sketch_filenames, self.sketch_label_idxs = get_data_list_compressed(self.sketches_zip_file, self.labels, self.label_to_index, 'sketches') 
 
     self.word_vectors_similarity = np.exp(-np.square(cdist(self.embedding, self.embedding, metric = 'euclidean'))/0.1) # 0.1 is temperature
     # can be cosine similarity also
@@ -117,7 +98,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     label_idx = self.sketch_label_idxs[idx]
 
     '''SKETCH IMAGE'''
-    sketch_image = Image.open(filename).convert('RGB').resize((224,224))
+    sketch_image = Image.open(BytesIO(self.images_zip_file.read(filename))).convert('RGB').resize((224,224))
 
     '''POSITIVE IMAGE'''
     positive_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = label_idx)))).convert('RGB').resize((224,224))  
@@ -154,8 +135,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
 
 
 class Dataloaders:
-  # if zip file is there, it must be present in the data_dir, here it is taken as yes
-  def __init__(self, data_dir, files_dir):
+  def __init__(self, data_dir):
     self.train_labels = open(os.path.join(data_dir, 'train_labels.txt')).read().splitlines() 
     self.train_dict = label2index(self.train_labels)
     self.train_label_embeddings = np.load(os.path.join(data_dir,'train_embeddings.npy'))
@@ -164,9 +144,9 @@ class Dataloaders:
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
 
-    self.train_dataset = QuickDrawTrainDataset(files_dir, self.train_labels, self.train_dict, self.train_label_embeddings, os.path.join(data_dir, 'QuickDraw_images_split.zip'), transforms = get_train_transforms())
-    self.test_dataset_images = QuickDrawTestDataset(os.path.join(data_dir, 'QuickDraw_images_split.zip'), self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
-    self.test_dataset_sketches = QuickDrawTestDataset(files_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
+    self.train_dataset = QuickDrawTrainDataset(data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
+    self.test_dataset_images = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
+    self.test_dataset_sketches = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
 
 
   def get_train_dataloader(self, batch_size, shuffle = True):
