@@ -6,6 +6,9 @@
 *.pyc
 *.log
 *.ipynb
+*.jpeg
+*.jpg
+*.png
 settings
 
 

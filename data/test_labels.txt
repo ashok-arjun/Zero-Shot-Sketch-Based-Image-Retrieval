@@ -1,8 +1,11 @@
-alarm_clock
+bat
+cow
 door
 helicopter
-lion
-mountain
-pineapple
-saw
-windmill
+pear
+rhinoceros
+scissors
+skyscraper
+sword
+wheelchair
+window

@@ -10,18 +10,18 @@ import glob
 import torchvision
 import torchvision.transforms as T
 
-def get_data_list_compressed(zip_file, labels, label_to_index, data_type):
+def get_data_list(data_dir, labels, label_to_index, data_type):
   if data_type == 'images':
-    ext = '.jpg'
+    ext = '*.jpg'
     data_type_dir = 'QuickDraw_images_final'
   elif data_type == 'sketches': 
-    ext = '.png'
+    ext = '*.png'
     data_type_dir = 'QuickDraw_sketches_final'
 
   filenames = []
   classes = []    
   for label in labels:
-    cur_label_filenames = [fn for fn in zip_file.namelist() if fn.startswith(os.path.join(data_type_dir, label)) and fn.endswith(ext)]
+    cur_label_filenames = glob.glob(os.path.join(data_dir,data_type_dir,label,ext))
     filenames.extend(cur_label_filenames)
     classes.extend([label_to_index[label]] * len(cur_label_filenames))
 
@@ -29,7 +29,7 @@ def get_data_list_compressed(zip_file, labels, label_to_index, data_type):
 
 def get_random_image(image_label_indices, image_filenames, label_idx):
   indices = [i for i,label in enumerate(image_label_indices) if label == label_idx]
-  return image_filenames[np.random.choice(indices, 1)[0]] 
+  return image_filenames[np.random.choice(indices, 1)[0]]
 
 def label2index(labels):
   '''For saving data when storing the labels'''
@@ -44,11 +44,9 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
     self.transforms = transforms
         
     if section == 'images':
-      self.zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_images_split.zip'))
-      self.filenames, self.label_idxs = get_data_list_compressed(self.zip_file, self.labels, self.label_to_index, section) 
+      self.filenames, self.label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, section) 
     elif section == 'sketches':
-      self.zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_sketches_final.zip'))
-      self.filenames, self.label_idxs = get_data_list_compressed(self.zip_file, self.labels, self.label_to_index, section) 
+      self.filenames, self.label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, section) 
 
   def __getitem__(self, idx):
     '''
@@ -59,7 +57,7 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
     filename = self.filenames[idx]
     label_idx = self.label_idxs[idx]
 
-    image = Image.open(BytesIO(self.zip_file.read(filename))).convert('RGB').resize((224,224))
+    image = Image.open(filename).convert('RGB').resize((224,224))
 
     '''TRANSFORMS'''
     if self.transforms:
@@ -78,12 +76,9 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     self.label_to_index = label_to_index
     self.embedding = embedding
     self.transforms = transforms
-    self.images_zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_images_split.zip'))
-    self.sketches_zip_file = ZipFile(os.path.join(data_dir, 'QuickDraw_sketches_final.zip'))
 
-
-    self.image_filenames, self.image_label_idxs = get_data_list_compressed(self.images_zip_file, self.labels, self.label_to_index, 'images') 
-    self.sketch_filenames, self.sketch_label_idxs = get_data_list_compressed(self.sketches_zip_file, self.labels, self.label_to_index, 'sketches') 
+    self.image_filenames, self.image_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'images') 
+    self.sketch_filenames, self.sketch_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'sketches') 
 
     self.word_vectors_similarity = np.exp(-np.square(cdist(self.embedding, self.embedding, metric = 'euclidean'))/0.1) # 0.1 is temperature
     # can be cosine similarity also
@@ -92,16 +87,12 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     '''
     Reads sketch at 'idx' and returns a corresponding random image with the same label, and a hard negative image as triplet
     '''
-
-    '''GET FILENAME AND LABEL'''
-    filename = self.sketch_filenames[idx]
-    label_idx = self.sketch_label_idxs[idx]
-
     '''SKETCH IMAGE'''
-    sketch_image = Image.open(BytesIO(self.sketches_zip_file.read(filename))).convert('RGB').resize((224,224))
+    sketch_filename, label_idx = self.sketch_filenames[idx], self.sketch_label_idxs[idx]
+    sketch_image = Image.open(sketch_filename).convert('RGB').resize((224,224))
 
     '''POSITIVE IMAGE'''
-    positive_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = label_idx)))).convert('RGB').resize((224,224))  
+    positive_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, label_idx)).convert('RGB').resize((224,224))  
 
     '''NEGATIVE IMAGE'''
     current_label_similarities = self.word_vectors_similarity[label_idx]
@@ -110,7 +101,7 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
     negative_labels_similarities_norms = np.linalg.norm(negative_labels_similarities, ord = 1) # Returns sum over absolute values
     negative_labels_similarities /= negative_labels_similarities_norms
     chosen_negative_label_idx = np.random.choice(negative_labels, 1, p = negative_labels_similarities)[0]
-    negative_image = Image.open(BytesIO(self.images_zip_file.read(get_random_image(self.image_label_idxs, self.image_filenames, label_idx = chosen_negative_label_idx)))).convert('RGB').resize((224,224)) 
+    negative_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, chosen_negative_label_idx)).convert('RGB').resize((224,224)) 
 
 
     '''EMBEDDING'''
@@ -122,11 +113,9 @@ class QuickDrawTrainDataset(torch.utils.data.Dataset):
       cur_label_embedding = torch.FloatTensor(cur_label_embedding)
 
 
-    '''TRIPLET'''
+    '''RETURN'''
 
-    triplet = {'anchor':sketch_image, 'positive':positive_image, 'negative':negative_image}
-
-    return triplet, cur_label_embedding, label_idx, chosen_negative_label_idx
+    return sketch_image, positive_image, negative_image, cur_label_embedding, label_idx, chosen_negative_label_idx
 
 
   def __len__(self):

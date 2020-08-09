@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
+
 class GradReverse(torch.autograd.Function):
     '''GRL layer from https://arxiv.org/abs/1409.7495'''
 
@@ -83,7 +84,7 @@ class DomainLoss(nn.Module):
 
 
 class DetangledJointDomainLoss(nn.Module):
-  def __init__(self, input_size = 300, grl_lambda = 0.5, w_dom = 0.25, w_triplet = 0.25, w_sem = 0.25):
+  def __init__(self, input_size = 300, grl_lambda = 0.5, w_dom = 0.25, w_triplet = 0.25, w_sem = 0.25, device = torch.device('cpu')):
     super(DetangledJointDomainLoss, self).__init__()
 
     self.grl_lambda = grl_lambda
@@ -96,22 +97,23 @@ class DetangledJointDomainLoss(nn.Module):
     self.semantic_loss = SemanticLoss(input_size = input_size, embedding_size = 300) # 300 represents the word2vec size
     self.triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2) # Triplet loss with margin 1.0 and distance of second order
 
+    self.device = device
 
   def forward(self, anchor_output, positive_output, negative_output, embedding, epoch):
     '''
     Returns the loss, by combining the three losses, epoch parameter is to anneal GRL lambda over time
     '''
 
-    loss_semantic = self.semantic_loss(anchor_output, embedding) + self.semantic_loss(positive_output, embedding) + self.semantic_loss(grad_reverse(anchor_output, self.grl_lambda), embedding)
+    loss_semantic = self.semantic_loss(anchor_output, embedding)
+    loss_semantic += self.semantic_loss(positive_output, embedding)  
+    loss_semantic += self.semantic_loss(grad_reverse(negative_output, self.grl_lambda), embedding)
     loss_semantic = loss_semantic.mean()
-
     loss_triplet = self.triplet_loss(anchor_output, positive_output, negative_output)
 
     # Create targets for the domain loss(adversarial for the main model - as imposed by the GRL after every output)
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     batch_size = anchor_output.shape[0]
-    targets_sketch = torch.zeros(batch_size)
-    targets_photos = torch.ones(batch_size)
+    targets_sketch = torch.zeros(batch_size).to(self.device)
+    targets_photos = torch.ones(batch_size).to(self.device)
 
     if epoch < 5:
       lmbda = 0

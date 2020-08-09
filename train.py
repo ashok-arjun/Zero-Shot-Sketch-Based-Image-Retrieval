@@ -21,8 +21,8 @@ from evaluate import evaluate
 from utils import *
 
 class Trainer():
-  def __init__(self, data_dir, files_dir):
-    self.dataloaders = Dataloaders(data_dir, files_dir)
+  def __init__(self, data_dir):
+    self.dataloaders = Dataloaders(data_dir)
     self.train_dict = self.dataloaders.train_dict
     self.test_dict = self.dataloaders.test_dict
   
@@ -31,7 +31,7 @@ class Trainer():
     batch_size = config['batch_size']
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    train_dataloader = self.dataloaders.get_train_dataloader(batch_size = batch_size) 
+    train_dataloader = self.dataloaders.get_train_dataloader(batch_size = batch_size, shuffle=True) 
     num_batches = len(train_dataloader) 
 
     image_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
@@ -52,7 +52,6 @@ class Trainer():
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
     print('Training...')    
-    return
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_loss_total = RunningAverage()
       accumulated_loss_dom = RunningAverage()
@@ -62,7 +61,7 @@ class Trainer():
 
       epoch_start_time = time.time()
 
-      image_model.train(); sketch_model.train(); loss_model.train()
+      image_model = image_model.train(); sketch_model.train(); loss_model.train()
 
       for iteration, batch in enumerate(train_dataloader):
         # wandb_step += 1
@@ -72,15 +71,15 @@ class Trainer():
         optimizer.zero_grad()
 
         '''GETTING THE DATA'''
-        triplets, label_embeddings, positive_label_idxs, negative_label_idxs = batch
-        anchors = triplets['anchor']; positives = triplets['positive']; negatives = triplets['negative'];
+        anchors, positives, negatives, label_embeddings, positive_label_idxs, negative_label_idxs = batch
         anchors = torch.autograd.Variable(anchors.to(device)); positives = torch.autograd.Variable(positives.to(device))
         negatives = torch.autograd.Variable(negatives.to(device)); label_embeddings = torch.autograd.Variable(label_embeddings.to(device))
 
         '''INFERENCE AND LOSS'''
-        pred_sketch_features = sketch_model(anchors)
-        pred_positives_features = image_model(positives)
-        pred_negatives_features = image_model(negatives)
+        pred_sketch_features, sketch_attn = sketch_model(anchors)
+        pred_positives_features, positives_attn = image_model(positives)
+        pred_negatives_features, negatives_attn = image_model(negatives)
+
         total_loss, loss_domain, loss_triplet, loss_semantic = loss_model(pred_sketch_features, pred_positives_features,
                                                                           pred_negatives_features, label_embeddings,
                                                                           epoch) # epoch is sent to anneal/temper domain GRL lambda
@@ -100,7 +99,7 @@ class Trainer():
 
         if iteration % config['print_every'] == 0:
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')), end = ' ')
-          print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta))
+          print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
           print('Total loss: %f(%f); Domain loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
           (total_loss, accumulated_loss_total(), loss_domain, accumulated_loss_dom(), loss_semantic, accumulated_loss_sem(), loss_triplet, accumulated_loss_triplet()))
 
@@ -108,10 +107,13 @@ class Trainer():
       epoch_end_time = time.time()
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
       lr_scheduler.step()
-      del triplets; del label_embeddings; del pred_sketch_features; del pred_positives_features; del pred_negatives_features
+      del pred_sketch_features; del sketch_attn;
+      del pred_positives_features; del positives_attn;
+      del pred_negatives_features; del negatives_attn;
+      del label_embeddings; del pred_sketch_features; del pred_positives_features; del pred_negatives_features
       torch.cuda.empty_cache()
 
 
       '''EVALUATE WITH THE TEST SET'''
-      test_mAP = evaluate(dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'images'), dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'sketches'), image_model, sketch_model)
+      test_mAP = evaluate(dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'images', shuffle=False), dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'sketches', shuffle=False), image_model, sketch_model)
       print('Test mAP: %f' % (test_mAP))
