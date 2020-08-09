@@ -11,7 +11,7 @@ import torchvision
 import torchvision.transforms as T
 
 def get_data_list(data_dir, labels, label_to_index, section):
-  ext = '*.jpg ' if section=='photos' else '*.png'
+  ext = '*.jpg' if section == 'photos' else '*.png'
 
   filenames = []
   classes = []    
