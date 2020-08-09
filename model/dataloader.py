@@ -1,7 +1,6 @@
 import torch
 from smart_open import open
 import os
-from zipfile import ZipFile
 import numpy as np
 from scipy.spatial.distance import cdist
 from PIL import Image
