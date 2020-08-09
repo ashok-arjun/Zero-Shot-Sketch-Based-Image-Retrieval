@@ -130,17 +130,3 @@ class DetangledJointDomainLoss(nn.Module):
     total_loss = self.w_dom * loss_domain + self.w_sem * loss_semantic + self.w_triplet * loss_triplet # Our network minimizes this loss
 
     return total_loss, loss_domain, loss_triplet, loss_semantic
-
-
-
-
-
-
-
-
-
-
-
-
-
-

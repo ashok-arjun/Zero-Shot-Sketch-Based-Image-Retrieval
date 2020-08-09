@@ -10,18 +10,13 @@ import glob
 import torchvision
 import torchvision.transforms as T
 
-def get_data_list(data_dir, labels, label_to_index, data_type):
-  if data_type == 'images':
-    ext = '*.jpg'
-    data_type_dir = 'QuickDraw_images_final'
-  elif data_type == 'sketches': 
-    ext = '*.png'
-    data_type_dir = 'QuickDraw_sketches_final'
+def get_data_list(data_dir, labels, label_to_index, section):
+  ext = '*.jpg ' if section=='photos' else '*.png'
 
   filenames = []
   classes = []    
   for label in labels:
-    cur_label_filenames = glob.glob(os.path.join(data_dir,data_type_dir,label,ext))
+    cur_label_filenames = glob.glob(os.path.join(data_dir,section,label,ext))
     filenames.extend(cur_label_filenames)
     classes.extend([label_to_index[label]] * len(cur_label_filenames))
 
@@ -36,17 +31,14 @@ def label2index(labels):
   d = {l: i for i, l in enumerate(labels)}
   return d
 
-class QuickDrawTestDataset(torch.utils.data.Dataset):
+class SketchyTestDataset(torch.utils.data.Dataset):
   def __init__(self, data_dir, labels, label_to_index, embedding, section, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding # not used
     self.transforms = transforms
         
-    if section == 'images':
-      self.filenames, self.label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, section) 
-    elif section == 'sketches':
-      self.filenames, self.label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, section) 
+    self.filenames, self.label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, section) 
 
   def __getitem__(self, idx):
     '''
@@ -70,14 +62,14 @@ class QuickDrawTestDataset(torch.utils.data.Dataset):
 
 
 
-class QuickDrawTrainDataset(torch.utils.data.Dataset):
+class SketchyTrainDataset(torch.utils.data.Dataset):
   def __init__(self, data_dir, labels, label_to_index, embedding, transforms = None):
     self.labels = labels
     self.label_to_index = label_to_index
     self.embedding = embedding
     self.transforms = transforms
 
-    self.image_filenames, self.image_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'images') 
+    self.image_filenames, self.image_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'photos') 
     self.sketch_filenames, self.sketch_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'sketches') 
 
     self.word_vectors_similarity = np.exp(-np.square(cdist(self.embedding, self.embedding, metric = 'euclidean'))/0.1) # 0.1 is temperature
@@ -133,9 +125,9 @@ class Dataloaders:
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
 
-    self.train_dataset = QuickDrawTrainDataset(data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
-    self.test_dataset_images = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='images', transforms = get_test_transforms())
-    self.test_dataset_sketches = QuickDrawTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
+    self.train_dataset = SketchyTrainDataset(data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
+    self.test_dataset_images = SketchyTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='photos', transforms = get_test_transforms())
+    self.test_dataset_sketches = SketchyTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
 
 
   def get_train_dataloader(self, batch_size, shuffle = True):
@@ -148,10 +140,8 @@ class Dataloaders:
 
 
   def get_test_dataloader(self, batch_size, section, shuffle = False):
-    if section == 'images':
-      dataset = self.test_dataset_images
-    else:
-      dataset = self.test_dataset_sketches
+    dataset = self.test_dataset_images if section == 'photos' else self.test_dataset_sketches
+
     test_dataloader = torch.utils.data.DataLoader(dataset, 
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
