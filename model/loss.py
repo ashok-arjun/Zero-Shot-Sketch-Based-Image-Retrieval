@@ -110,7 +110,7 @@ class DetangledJointDomainLoss(nn.Module):
     loss_semantic = loss_semantic.mean()
     loss_triplet = self.triplet_loss(anchor_output, positive_output, negative_output)
 
-    # Create targets for the domain loss(adversarial for the main model - as imposed by the GRL after every output)
+    # Create targets for the domain loss(INDIRECTLY adversarial for the main model - as imposed by the GRL after every output)
     batch_size = anchor_output.shape[0]
     targets_sketch = torch.zeros(batch_size).to(self.device)
     targets_photos = torch.ones(batch_size).to(self.device)

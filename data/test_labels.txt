@@ -1,11 +1,2 @@
-bat
-cow
-door
-helicopter
-pear
-rhinoceros
-scissors
-skyscraper
+pizza
 sword
-wheelchair
-window

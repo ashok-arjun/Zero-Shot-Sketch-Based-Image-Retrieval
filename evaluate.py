@@ -11,17 +11,15 @@ import wandb
 
 from model.net import MainModel
 
-def stack_into_tensor(list_x):
-  '''Takes a list of batched tensors, stacks them and reshapes them to (num_items, 1)'''
-  x = torch.stack(list_x)
-  x = x.view(x.shape[0] * x.shape[1], -1)
-  return x  
-
-def evaluate(images_dataloader, sketches_dataloader, images_model, sketches_model, label2index): 
+def evaluate(config, dataloaders, images_model, sketches_model):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
 
+  batch_size = config['test_batch_size']
+  images_dataloader = dataloaders.get_test_dataloader(batch_size = batch_size, section = 'photos', shuffle = False)
+  sketches_dataloader = dataloaders.get_test_dataloader(batch_size = batch_size, section = 'sketches', shuffle = False)
+  label2index = dataloaders.test_dict
 
   '''IMAGES'''
   print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
@@ -29,16 +27,14 @@ def evaluate(images_dataloader, sketches_dataloader, images_model, sketches_mode
   start_time = time.time()
 
   image_feature_predictions = []; image_label_indices = []
-
   with torch.no_grad():
     for iteration, batch in enumerate(images_dataloader):
       images, label_indices = batch 
       images = torch.autograd.Variable(images.to(device))
-      pred_features = images_model(images)
+      pred_features,_ = images_model(images)
       image_feature_predictions.append(pred_features); image_label_indices.append(label_indices)  
-
-  image_feature_predictions = stack_into_tensor(image_feature_predictions)
-  image_label_indices = stack_into_tensor(image_label_indices)
+  image_feature_predictions = torch.cat(image_feature_predictions,dim=0)
+  image_label_indices = torch.cat(image_label_indices,dim=0)
 
   end_time = time.time()
 
@@ -55,11 +51,11 @@ def evaluate(images_dataloader, sketches_dataloader, images_model, sketches_mode
     for iteration, batch in enumerate(sketches_dataloader):
       sketches, label_indices = batch 
       sketches = torch.autograd.Variable(sketches.to(device))
-      pred_features = sketches_model(sketches)
+      pred_features,_ = sketches_model(sketches)
       sketch_feature_predictions.append(pred_features); sketch_label_indices.append(label_indices)
 
-  sketch_feature_predictions = stack_into_tensor(sketch_feature_predictions)
-  sketch_label_indices = stack_into_tensor(sketch_label_indices)
+  sketch_feature_predictions = torch.cat(sketch_feature_predictions,dim=0)
+  sketch_label_indices = torch.cat(sketch_label_indices,dim=0)
 
   end_time = time.time()
 

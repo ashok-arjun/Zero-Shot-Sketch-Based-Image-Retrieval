@@ -139,7 +139,10 @@ class Dataloaders:
 
 
   def get_test_dataloader(self, batch_size, section, shuffle = False):
-    dataset = self.test_dataset_images if section == 'photos' else self.test_dataset_sketches
+    if section == 'photos':
+      dataset = self.test_dataset_images
+    else:
+      dataset = self.test_dataset_sketches
 
     test_dataloader = torch.utils.data.DataLoader(dataset, 
                                                   batch_size = batch_size,

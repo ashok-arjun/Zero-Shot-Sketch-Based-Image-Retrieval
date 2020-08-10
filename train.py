@@ -36,7 +36,7 @@ class Trainer():
 
     image_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
     sketch_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
-    loss_model = DetangledJointDomainLoss(input_size = config['embedding_size'], grl_lambda = config['grl_lambda'], w_dom = config['w_dom'], w_triplet = config['w_triplet'], w_sem = config['w_sem'])
+    loss_model = DetangledJointDomainLoss(input_size = config['embedding_size'], grl_lambda = config['grl_lambda'], w_dom = config['w_dom'], w_triplet = config['w_triplet'], w_sem = config['w_sem'], device = device)
 
     image_model = image_model.to(device); sketch_model = sketch_model.to(device); loss_model = loss_model.to(device);
 
@@ -110,10 +110,8 @@ class Trainer():
       del pred_sketch_features; del sketch_attn;
       del pred_positives_features; del positives_attn;
       del pred_negatives_features; del negatives_attn;
-      del label_embeddings; del pred_sketch_features; del pred_positives_features; del pred_negatives_features
+      del anchors; del positives; del negatives; del label_embeddings;
       torch.cuda.empty_cache()
 
-
-      '''EVALUATE WITH THE TEST SET'''
-      test_mAP = evaluate(dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'images', shuffle=False), dataloaders.get_test_dataloader(batch_size = batch_size/2, section = 'sketches', shuffle=False), image_model, sketch_model)
-      print('Test mAP: %f' % (test_mAP))
+      test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
+    return image_model, sketch_model
