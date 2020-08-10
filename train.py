@@ -48,6 +48,17 @@ class Trainer():
 
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
+    if wandb.run.resumed or local:
+      if local:
+        print('Loading checkpoint from local storage:',checkpoint_file)
+        load_checkpoint(checkpoint_file, image_model, sketch_model, loss_model, optimizer)
+        print('Loaded checkpoint from local storage:',checkpoint_file)
+      else:  
+        print('Loading checkpoint from cloud storage:',checkpoint_file)
+        load_checkpoint(wandb.restore(checkpoint_file).name, image_model, sketch_model, loss_model, optimizer)
+        print('Loaded checkpoint from cloud storage:',checkpoint_file)
+    
+    
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
@@ -63,8 +74,9 @@ class Trainer():
 
       image_model = image_model.train(); sketch_model.train(); loss_model.train()
 
+      wandb_step = config['start_epoch'] * num_batches -1 # set it to the number of iterations done
       for iteration, batch in enumerate(train_dataloader):
-        # wandb_step += 1
+        wandb_step += 1
 
         time_start = time.time()        
 
@@ -102,7 +114,10 @@ class Trainer():
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
           print('Total loss: %f(%f); Domain loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
           (total_loss, accumulated_loss_total(), loss_domain, accumulated_loss_dom(), loss_semantic, accumulated_loss_sem(), loss_triplet, accumulated_loss_triplet()))
-
+          wandb.log({'Domain adversarial loss': loss_domain.item()}, step = wandb_step)
+          wandb.log({'Semantic loss': loss_semantic.item()}, step = wandb_step)
+          wandb.log({'Triplet loss': loss_triplet.item()}, step = wandb_step)
+          
       '''END OF EPOCH'''
       epoch_end_time = time.time()
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
@@ -114,5 +129,6 @@ class Trainer():
       torch.cuda.empty_cache()
 
       test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
+      wandb.log({'Test mAP': test_mAP}, step = wandb_step)
       print('\n\n\n\n\n\n')
     return image_model, sketch_model
