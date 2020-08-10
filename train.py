@@ -117,6 +117,12 @@ class Trainer():
           wandb.log({'Domain adversarial loss': loss_domain.item()}, step = wandb_step)
           wandb.log({'Semantic loss': loss_semantic.item()}, step = wandb_step)
           wandb.log({'Triplet loss': loss_triplet.item()}, step = wandb_step)
+          save_checkpoint({'iteration': wandb_step, 
+                        'image_model': image_model.state_dict(), 
+                        'sketch_model': sketch_model.state_dict(),
+                         'loss_model': loss_model.state_dict(),
+                        'optim_dict': optimizer.state_dict()},
+                        checkpoint_dir = 'experiments/')
           
       '''END OF EPOCH'''
       epoch_end_time = time.time()
@@ -130,5 +136,11 @@ class Trainer():
 
       test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
       wandb.log({'Test mAP': test_mAP}, step = wandb_step)
+      save_checkpoint({'iteration': wandb_step, 
+                        'image_model': image_model.state_dict(), 
+                        'sketch_model': sketch_model.state_dict(),
+                         'loss_model': loss_model.state_dict(),
+                        'optim_dict': optimizer.state_dict()},
+                        checkpoint_dir = 'experiments/', save_to_cloud = True)
       print('\n\n\n\n\n\n')
     return image_model, sketch_model
