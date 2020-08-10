@@ -114,4 +114,5 @@ class Trainer():
       torch.cuda.empty_cache()
 
       test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
+      print('\n\n\n\n\n\n')
     return image_model, sketch_model
