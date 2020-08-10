@@ -143,4 +143,3 @@ class Trainer():
                         'optim_dict': optimizer.state_dict()},
                         checkpoint_dir = 'experiments/', save_to_cloud = True)
       print('\n\n\n\n\n\n')
-    return image_model, sketch_model
