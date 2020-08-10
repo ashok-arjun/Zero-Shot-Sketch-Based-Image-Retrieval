@@ -128,10 +128,6 @@ class Trainer():
       epoch_end_time = time.time()
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
       lr_scheduler.step()
-      del pred_sketch_features; del sketch_attn;
-      del pred_positives_features; del positives_attn;
-      del pred_negatives_features; del negatives_attn;
-      del anchors; del positives; del negatives; del label_embeddings;
       torch.cuda.empty_cache()
 
       test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
