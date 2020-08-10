@@ -48,7 +48,7 @@ class Trainer():
 
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    if wandb.run.resumed or local:
+    if checkpoint_file:
       if local:
         print('Loading checkpoint from local storage:',checkpoint_file)
         load_checkpoint(checkpoint_file, image_model, sketch_model, loss_model, optimizer)
