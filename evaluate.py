@@ -12,7 +12,7 @@ import wandb
 from model.net import MainModel
 from utils import *
 
-def evaluate(config, dataloaders, images_model, sketches_model, k = 20, num_display = 2):
+def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_display = 2):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
@@ -36,6 +36,7 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 20, num_disp
       test_images.append(images); image_feature_predictions.append(pred_features); image_label_indices.append(label_indices)  
   image_feature_predictions = torch.cat(image_feature_predictions,dim=0)
   image_label_indices = torch.cat(image_label_indices,dim=0)
+  test_images = torch.cat(test_images, dim = 0)
 
   end_time = time.time()
 
@@ -57,6 +58,7 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 20, num_disp
 
   sketch_feature_predictions = torch.cat(sketch_feature_predictions,dim=0)
   sketch_label_indices = torch.cat(sketch_label_indices,dim=0)
+  test_sketches = torch.cat(test_sketches, dim = 0)
 
   end_time = time.time()
 
