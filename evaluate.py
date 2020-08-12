@@ -10,8 +10,9 @@ import torch.nn as nn
 import wandb
 
 from model.net import MainModel
+from utils import *
 
-def evaluate(config, dataloaders, images_model, sketches_model):
+def evaluate(config, dataloaders, images_model, sketches_model, k = 20, num_display = 2):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
@@ -26,13 +27,13 @@ def evaluate(config, dataloaders, images_model, sketches_model):
 
   start_time = time.time()
 
-  image_feature_predictions = []; image_label_indices = []
+  image_feature_predictions = []; image_label_indices = []; test_images = []
   with torch.no_grad():
     for iteration, batch in enumerate(images_dataloader):
       images, label_indices = batch 
       images = torch.autograd.Variable(images.to(device))
       pred_features,_ = images_model(images)
-      image_feature_predictions.append(pred_features); image_label_indices.append(label_indices)  
+      test_images.append(images); image_feature_predictions.append(pred_features); image_label_indices.append(label_indices)  
   image_feature_predictions = torch.cat(image_feature_predictions,dim=0)
   image_label_indices = torch.cat(image_label_indices,dim=0)
 
@@ -46,13 +47,13 @@ def evaluate(config, dataloaders, images_model, sketches_model):
 
   start_time = time.time()
 
-  sketch_feature_predictions = []; sketch_label_indices = []
+  sketch_feature_predictions = []; sketch_label_indices = []; test_sketches = []
   with torch.no_grad():
     for iteration, batch in enumerate(sketches_dataloader):
       sketches, label_indices = batch 
       sketches = torch.autograd.Variable(sketches.to(device))
       pred_features,_ = sketches_model(sketches)
-      sketch_feature_predictions.append(pred_features); sketch_label_indices.append(label_indices)
+      test_sketches.append(sketches); sketch_feature_predictions.append(pred_features); sketch_label_indices.append(label_indices)
 
   sketch_feature_predictions = torch.cat(sketch_feature_predictions,dim=0)
   sketch_label_indices = torch.cat(sketch_label_indices,dim=0)
@@ -84,4 +85,7 @@ def evaluate(config, dataloaders, images_model, sketches_model):
   mean_average_precision = average_precision_scores.mean()
 
   print('mAP: %f' % (mean_average_precision))
-  return mean_average_precision
+
+  sketches, image_grids = get_sketch_images_grids(test_sketches, test_images, similarity, k, num_display)
+
+  return sketches, image_grids, mean_average_precision

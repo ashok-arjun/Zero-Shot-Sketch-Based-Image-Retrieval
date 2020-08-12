@@ -62,6 +62,7 @@ class Trainer():
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
+    wandb_step = config['start_epoch'] * num_batches -1 # set it to the number of iterations done
     print('Training...')    
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_loss_total = RunningAverage()
@@ -73,8 +74,7 @@ class Trainer():
       epoch_start_time = time.time()
 
       image_model = image_model.train(); sketch_model.train(); loss_model.train()
-
-      wandb_step = config['start_epoch'] * num_batches -1 # set it to the number of iterations done
+      
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
 
@@ -130,8 +130,12 @@ class Trainer():
       lr_scheduler.step()
       torch.cuda.empty_cache()
 
-      test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
-      wandb.log({'Test mAP': test_mAP}, step = wandb_step)
+      sketches, image_grids, test_mAP = evaluate(config, self.dataloaders, image_model, sketch_model)
+
+      wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
+      wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
+
+      wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
