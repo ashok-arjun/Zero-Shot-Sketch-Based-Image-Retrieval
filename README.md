@@ -10,11 +10,9 @@ Using a semantic-aware network and a triplet loss along with a domain-classifyin
 <summary>
 Data
 </summary>
-<br>
   
 [The Sketchy dataset](http://transattr.cs.brown.edu/files/aligned_images.tar) - 1.8 GB
 
-<br>
 </details>
 <details>
 
