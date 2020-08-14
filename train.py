@@ -142,4 +142,5 @@ class Trainer():
                          'loss_model': loss_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
                         checkpoint_dir = 'experiments/', save_to_cloud = True)
+      print('Saved epoch to cloud!')
       print('\n\n\n')
