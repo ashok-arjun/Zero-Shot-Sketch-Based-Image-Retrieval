@@ -46,7 +46,7 @@ def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display)
   top_k_similarity_indices = -np.argsort(-cur_similarities, axis = 1)[:, :k]
   matched_images = [images[top_k_similarity_indices[i]] for i in range(num_display)]
 
-  list_of_sketches = [np.transpose(sketches[i].cpu().numpy(), (1,2,0)) for i in range(num_display)]
+  list_of_sketches = [np.transpose(cur_sketches[i].cpu().numpy(), (1,2,0)) for i in range(num_display)]
   list_of_image_grids = [np.transpose(make_grid(matched_images[i], nrow = k).cpu().numpy(), (1,2,0)) for i in range(num_display)]
 
   return list_of_sketches, list_of_image_grids

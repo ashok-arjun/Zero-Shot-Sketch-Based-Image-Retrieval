@@ -62,7 +62,7 @@ class Trainer():
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
-    wandb_step = config['start_epoch'] * num_batches -1 # set it to the number of iterations done
+    wandb_step = config['start_epoch'] * num_batches -1 
     print('Training...')    
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_loss_total = RunningAverage()
@@ -112,7 +112,7 @@ class Trainer():
         if iteration % config['print_every'] == 0:
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')), end = ' ')
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
-          print('Total loss: %f(%f); Domain loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
+          print('Total loss: %f(%f); Domain adversarial loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
           (total_loss, accumulated_loss_total(), loss_domain, accumulated_loss_dom(), loss_semantic, accumulated_loss_sem(), loss_triplet, accumulated_loss_triplet()))
           wandb.log({'Domain adversarial loss': loss_domain.item()}, step = wandb_step)
           wandb.log({'Semantic loss': loss_semantic.item()}, step = wandb_step)
@@ -142,4 +142,4 @@ class Trainer():
                          'loss_model': loss_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
                         checkpoint_dir = 'experiments/', save_to_cloud = True)
-      print('\n\n\n\n\n\n')
+      print('\n\n\n')

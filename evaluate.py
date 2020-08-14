@@ -23,7 +23,7 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_displ
   label2index = dataloaders.test_dict
 
   '''IMAGES'''
-  print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
+  # print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
 
   start_time = time.time()
 
@@ -40,11 +40,11 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_displ
 
   end_time = time.time()
 
-  print('Processed the images. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
+  # print('Processed the images. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
 
 
   '''SKETCHES'''
-  print('Processing the sketches. Batch size: %d; Number of batches: %d' % (batch_size, len(sketches_dataloader)))
+  # print('Processing the sketches. Batch size: %d; Number of batches: %d' % (batch_size, len(sketches_dataloader)))
 
   start_time = time.time()
 
@@ -62,7 +62,7 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_displ
 
   end_time = time.time()
 
-  print('Processed the sketches. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
+  # print('Processed the sketches. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
 
   '''mAP calculation'''
   image_feature_predictions = image_feature_predictions.cpu().numpy() 
@@ -85,8 +85,6 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_displ
     print('Class: %s, mAP: %f' % (index2label[cls], average_precision_scores[sketch_label_indices == cls].mean()))
 
   mean_average_precision = average_precision_scores.mean()
-
-  print('mAP: %f' % (mean_average_precision))
 
   sketches, image_grids = get_sketch_images_grids(test_sketches, test_images, similarity, k, num_display)
 
