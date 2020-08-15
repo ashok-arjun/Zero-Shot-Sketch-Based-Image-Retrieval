@@ -104,10 +104,13 @@ class DetangledJointDomainLoss(nn.Module):
     Returns the loss, by combining the three losses, epoch parameter is to anneal GRL lambda over time
     '''
 
-    loss_semantic = self.semantic_loss(anchor_output, embedding)
-    loss_semantic += self.semantic_loss(positive_output, embedding)  
-    loss_semantic += self.semantic_loss(grad_reverse(negative_output, self.grl_lambda), embedding)
-    loss_semantic = loss_semantic.mean()
+#     loss_semantic = self.semantic_loss(anchor_output, embedding)
+#     loss_semantic += self.semantic_loss(positive_output, embedding)  
+#     loss_semantic += self.semantic_loss(grad_reverse(negative_output, self.grl_lambda), embedding)
+#     loss_semantic = loss_semantic.mean()
+
+    loss_semantic = torch.tensor(0.0).to(self.device)
+
     loss_triplet = self.triplet_loss(anchor_output, positive_output, negative_output)
 
     # Create targets for the domain loss(INDIRECTLY adversarial for the main model - as imposed by the GRL after every output)
@@ -115,12 +118,14 @@ class DetangledJointDomainLoss(nn.Module):
     targets_sketch = torch.zeros(batch_size).to(self.device)
     targets_photos = torch.ones(batch_size).to(self.device)
 
-    if epoch < 5:
-      lmbda = 0
-    elif epoch < 25:
-      lmbda = (epoch-5)/20.0
-    else:
-      lmbda = 1.0
+#     if epoch < 5:
+#       lmbda = 0
+#     elif epoch < 25:
+#       lmbda = (epoch-5)/20.0
+#     else:
+#       lmbda = 1.0
+
+    lmbda = epoch/25.0 if epoch <= 25 else 1.0
 
 
     loss_domain = self.domain_loss(grad_reverse(anchor_output, lmbda), targets_sketch) + self.domain_loss(grad_reverse(positive_output, lmbda), targets_photos) + self.domain_loss(grad_reverse(negative_output, lmbda), targets_photos)
