@@ -48,7 +48,7 @@ class SemanticLoss(nn.Module):
 
     self.net = nn.Sequential(
       nn.Linear(input_size, 1024),
-      nn.ReLU(),
+      nn.ReLU(True),
       nn.Dropout(0.5),
 
       nn.Linear(1024, embedding_size)
@@ -69,11 +69,11 @@ class DomainLoss(nn.Module):
 
     self.net = nn.Sequential(
       nn.Linear(input_size, hidden_size),
-      nn.ReLU(),
+      nn.ReLU(True),
       nn.Dropout(0.5),
 
       nn.Linear(hidden_size, hidden_size),
-      nn.ReLU(),
+      nn.ReLU(True),
 
       nn.Linear(hidden_size, 1)
     )

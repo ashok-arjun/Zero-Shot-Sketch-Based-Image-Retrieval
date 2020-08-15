@@ -33,13 +33,22 @@ class MainModel(nn.Module):
   def __init__(self, pretrained = True, output_embedding_size = 300, use_attention = True):
 
     super(MainModel, self).__init__()
-    shufflenet = torchvision.models.shufflenet_v2_x0_5(pretrained=pretrained, progress=False)
-    self.features = nn.Sequential(
-        *list(shufflenet.children())[:-1]
-    )
+    # shufflenet = torchvision.models.shufflenet_v2_x0_5(pretrained=pretrained, progress=False)
+    # self.features = nn.Sequential(
+    #     *list(shufflenet.children())[:-1]
+    # )
+    # features_final_channels = 1024
+
+    # vgg16 = torchvision.models.vgg16_bn(pretrained = pretrained, progress = False)
+    # self.features = vgg16.features # vgg16 structure is like features and classifier
+    # features_final_channels = 512
+
+    densenet121 = torchvision.models.densenet121(pretrained = pretrained, progress = False)
+    self.features = densenet121.features
+    features_final_channels = 1024
 
     self.use_attention = use_attention
-    self.attention_block = AttentionBlock(input_filters = 1024, hidden_filters = 512)
+    self.attention_block = AttentionBlock(input_filters = features_final_channels, hidden_filters = 512)
     
     
     self.embed_block = nn.Sequential(
@@ -54,6 +63,9 @@ class MainModel(nn.Module):
 
       nn.Linear(1024, output_embedding_size)
     ) #TODO: experiment with the architecture
+
+    # self.embed_block = vgg16.classifier
+    # self.embed_block._modules['6'] = nn.Linear(4096, output_embedding_size) 
 
 
 
