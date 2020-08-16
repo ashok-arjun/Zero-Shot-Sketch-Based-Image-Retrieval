@@ -135,9 +135,9 @@ class DetangledJointDomainLoss(nn.Module):
     # lmbda = epoch/25.0 if epoch <= 25 else 1.0
 
 
-#     loss_domain = self.domain_loss(grad_reverse(anchor_output, lmbda), targets_sketch) + self.domain_loss(grad_reverse(positive_output, lmbda), targets_photos) + self.domain_loss(grad_reverse(negative_output, lmbda), targets_photos)
+    # loss_domain = self.domain_loss(grad_reverse(anchor_output, lmbda), targets_sketch) + self.domain_loss(grad_reverse(positive_output, lmbda), targets_photos) + self.domain_loss(grad_reverse(negative_output, lmbda), targets_photos)
     # loss_domain /= 3.0
-      loss_domain = 0.0  
+    loss_domain = 0.0  
 
     total_loss = self.w_dom * loss_domain + self.w_sem * loss_semantic + self.w_triplet * loss_triplet # Our network minimizes this loss
 
