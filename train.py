@@ -108,9 +108,9 @@ class Trainer():
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
           print('Total loss: %f(%f); Domain adversarial loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
           (total_loss, accumulated_loss_total(), loss_domain, accumulated_loss_dom(), loss_semantic, accumulated_loss_sem(), loss_triplet, accumulated_loss_triplet()))
-          wandb.log({'Domain adversarial loss': loss_domain.item()}, step = wandb_step)
-          wandb.log({'Semantic loss': loss_semantic.item()}, step = wandb_step)
-          wandb.log({'Triplet loss': loss_triplet.item()}, step = wandb_step)
+          wandb.log({'Average Domain adversarial loss': accumulated_loss_dom()}, step = wandb_step)
+          wandb.log({'Average Semantic loss': accumulated_loss_sem()}, step = wandb_step)
+          wandb.log({'Average Triplet loss': accumulated_loss_triplet()}, step = wandb_step)
           save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
