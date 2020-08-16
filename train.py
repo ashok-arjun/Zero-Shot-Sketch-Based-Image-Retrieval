@@ -49,15 +49,9 @@ class Trainer():
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
     if checkpoint_file:
-      if local:
-        print('Loading checkpoint from local storage:',checkpoint_file)
-        load_checkpoint(checkpoint_file, image_model, sketch_model, loss_model, optimizer)
-        print('Loaded checkpoint from local storage:',checkpoint_file)
-      else:  
-        print('Loading checkpoint from cloud storage:',checkpoint_file)
-        load_checkpoint(wandb.restore(checkpoint_file).name, image_model, sketch_model, loss_model, optimizer)
-        print('Loaded checkpoint from cloud storage:',checkpoint_file)
-    
+      file_path = checkpoint_file if local else wandb.restore(checkpoint_file)
+      load_checkpoint(file_path, image_model, sketch_model, loss_model, optimizer)
+      print('Loaded checkpoint from %s storage:' % ('local' if local else 'cloud'))
     
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):

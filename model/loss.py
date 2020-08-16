@@ -49,9 +49,11 @@ class SemanticLoss(nn.Module):
     self.net = nn.Sequential(
       nn.Linear(input_size, 1024),
       nn.ReLU(True),
-      nn.Dropout(0.5),
+      # nn.Dropout(0.5),
+      nn.Linear(1024, 512),
+      nn.ReLU(True),
 
-      nn.Linear(1024, embedding_size)
+      nn.Linear(512, embedding_size)
     )
 
   def forward(self, input, target):
@@ -70,7 +72,12 @@ class DomainLoss(nn.Module):
     self.net = nn.Sequential(
       nn.Linear(input_size, hidden_size),
       nn.ReLU(True),
-      nn.Dropout(0.5),
+
+      nn.Linear(hidden_size, hidden_size),
+      nn.ReLU(True),
+
+      nn.Linear(hidden_size, hidden_size),
+      nn.ReLU(True),
 
       nn.Linear(hidden_size, hidden_size),
       nn.ReLU(True),
@@ -95,7 +102,7 @@ class DetangledJointDomainLoss(nn.Module):
 
     self.domain_loss = DomainLoss(input_size = input_size)
     self.semantic_loss = SemanticLoss(input_size = input_size, embedding_size = 300) # 300 represents the word2vec size
-    self.triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2) # Triplet loss with margin 1.0 and distance of second order
+    self.triplet_loss = nn.TripletMarginLoss(margin=0.1, p=2) # Triplet loss with margin 1.0 and distance of second order
 
     self.device = device
 
@@ -104,12 +111,12 @@ class DetangledJointDomainLoss(nn.Module):
     Returns the loss, by combining the three losses, epoch parameter is to anneal GRL lambda over time
     '''
 
-#     loss_semantic = self.semantic_loss(anchor_output, embedding)
-#     loss_semantic += self.semantic_loss(positive_output, embedding)  
-#     loss_semantic += self.semantic_loss(grad_reverse(negative_output, self.grl_lambda), embedding)
-#     loss_semantic = loss_semantic.mean()
+    loss_semantic = self.semantic_loss(anchor_output, embedding)
+    loss_semantic += self.semantic_loss(positive_output, embedding)  
+    loss_semantic += self.semantic_loss(grad_reverse(negative_output, self.grl_lambda), embedding)
+    loss_semantic = loss_semantic.mean()
 
-    loss_semantic = torch.tensor(0.0).to(self.device)
+    # loss_semantic = torch.tensor(0.0).to(self.device)
 
     loss_triplet = self.triplet_loss(anchor_output, positive_output, negative_output)
 
@@ -118,18 +125,18 @@ class DetangledJointDomainLoss(nn.Module):
     targets_sketch = torch.zeros(batch_size).to(self.device)
     targets_photos = torch.ones(batch_size).to(self.device)
 
-#     if epoch < 5:
-#       lmbda = 0
-#     elif epoch < 25:
-#       lmbda = (epoch-5)/20.0
-#     else:
-#       lmbda = 1.0
+    if epoch < 5:
+      lmbda = 0
+    elif epoch < 25:
+      lmbda = (epoch-5)/20.0
+    else:
+      lmbda = 1.0
 
-    lmbda = epoch/25.0 if epoch <= 25 else 1.0
+    # lmbda = epoch/25.0 if epoch <= 25 else 1.0
 
 
     loss_domain = self.domain_loss(grad_reverse(anchor_output, lmbda), targets_sketch) + self.domain_loss(grad_reverse(positive_output, lmbda), targets_photos) + self.domain_loss(grad_reverse(negative_output, lmbda), targets_photos)
-    loss_domain /= 3.0
+    # loss_domain /= 3.0
 
 
     total_loss = self.w_dom * loss_domain + self.w_sem * loss_semantic + self.w_triplet * loss_triplet # Our network minimizes this loss
