@@ -93,8 +93,30 @@ class BasicModel(nn.Module):
   def __init__(self):
     super(BasicModel, self).__init__()
     self.net = torchvision.models.densenet121(pretrained = True, progress = False).features
-    self.embed = torch.nn.Conv2d(1024, 300, (7,7))    
+    self.avg_pool = torch.nn.MaxPool2d((7,7))    
   def forward(self, x):
-    return self.embed(self.net(x)).view(x.shape[0], -1)
+    return self.avg_pool(self.net(x)).view(x.shape[0], -1)
 
-# class EmbeddingLossModel(nn.Module):
+class EmbeddingLossModel(nn.Module):
+  '''This model tries to reconstruct the embedding in 300 dimensions(Word2Vec/GloVe) from the output of the Basic Model(4096 dim)'''
+  def __init__(self):
+    super(EmbeddingLossModel, self).__init__()
+    self.net = nn.Sequential(
+      nn.Linear(4096, 4096),
+      nn.ReLU(inplace = True),
+
+      nn.Linear(4096, 2048),
+      nn.ReLU(inplace = True),
+
+      nn.Linear(2048, 1024),
+      nn.ReLU(inplace = True),
+
+      nn.Linear(1024, 512),
+      nn.ReLU(inplace = True),
+
+      nn.Linear(512, 300),
+      nn.ReLU(inplace = True),
+    )
+
+    def forward(self, x):
+      return self.net(x)
