@@ -102,7 +102,7 @@ class DetangledJointDomainLoss(nn.Module):
 
     self.domain_loss = DomainLoss(input_size = input_size)
     self.semantic_loss = SemanticLoss(input_size = input_size, embedding_size = 300) # 300 represents the word2vec size
-    self.triplet_loss = nn.TripletMarginLoss(margin=0.1, p=2) # Triplet loss with margin 1.0 and distance of second order
+    self.triplet_loss = nn.TripletMarginLoss(margin=0.1, p=2) 
 
     self.device = device
 

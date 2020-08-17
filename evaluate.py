@@ -12,15 +12,14 @@ import wandb
 from model.net import MainModel
 from utils import *
 
-def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_display = 2):
+def evaluate(config, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
 
   batch_size = config['test_batch_size']
-  images_dataloader = dataloaders.get_test_dataloader(batch_size = batch_size, section = 'photos', shuffle = False)
-  sketches_dataloader = dataloaders.get_test_dataloader(batch_size = batch_size, section = 'sketches', shuffle = False)
-  label2index = dataloaders.test_dict
+  images_dataloader = dataloader_fn(batch_size = batch_size, section = 'photos', shuffle = False)
+  sketches_dataloader = dataloader_fn(batch_size = batch_size, section = 'sketches', shuffle = False)
 
   '''IMAGES'''
   # print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
@@ -70,7 +69,7 @@ def evaluate(config, dataloaders, images_model, sketches_model, k = 5, num_displ
   image_label_indices = image_label_indices.cpu().numpy() 
   sketch_label_indices = sketch_label_indices.cpu().numpy() 
 
-  distance = cdist(sketch_feature_predictions, image_feature_predictions, 'euclidean')
+  distance = cdist(sketch_feature_predictions, image_feature_predictions, 'minkowski')
   similarity = 1.0/distance 
 
   is_correct_label_index = 1 * (np.expand_dims(sketch_label_indices, axis = 1) == np.expand_dims(image_label_indices, axis = 0))

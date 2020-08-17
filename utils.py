@@ -34,7 +34,7 @@ def load_checkpoint(checkpoint, image_model, sketch_model, loss_model, optimizer
     if optimizer:
         optimizer.load_state_dict(checkpoint['optim_dict'])
 
-    return checkpoint
+    return None
 
 def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display):
 
@@ -42,8 +42,12 @@ def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display)
   indices = np.random.choice(num_sketches, num_display)
 
   cur_sketches = sketches[indices]; cur_similarities = similarity_scores[indices]
-  top_k_similarity_indices = -np.argsort(-cur_similarities, axis = 1)[:, :k]
+  top_k_similarity_indices  = np.flip(np.argsort(cur_similarities, axis = 1)[:, -k:], axis = 1).copy()
+  top_k_similarity_values = np.flip(np.sort(cur_similarities, axis = 1)[:,-k:], axis = 1).copy()
   matched_images = [images[top_k_similarity_indices[i]] for i in range(num_display)]
+
+  print(top_k_similarity_indices)
+  print(top_k_similarity_values)
 
   list_of_sketches = [np.transpose(cur_sketches[i].cpu().numpy(), (1,2,0)) for i in range(num_display)]
   list_of_image_grids = [np.transpose(make_grid(matched_images[i], nrow = k).cpu().numpy(), (1,2,0)) for i in range(num_display)]

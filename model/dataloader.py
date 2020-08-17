@@ -128,6 +128,7 @@ class Dataloaders:
     self.test_dataset_images = SketchyTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='photos', transforms = get_test_transforms())
     self.test_dataset_sketches = SketchyTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='sketches', transforms = get_test_transforms())
 
+    self.data_dir = data_dir
 
   def get_train_dataloader(self, batch_size, shuffle = True):
 
@@ -150,6 +151,14 @@ class Dataloaders:
                                                   num_workers = 1)
     return test_dataloader                                              
 
+  def get_full_train_dataloader(self, batch_size, section, shuffle = False):
+    dataset = SketchyTestDataset(self.data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, section, transforms = get_test_transforms())
+
+    dataloader = torch.utils.data.DataLoader(dataset, 
+                                            batch_size = batch_size,
+                                            shuffle = shuffle,
+                                            num_workers = 1)
+    return dataloader   
 
 
 def get_train_transforms():
