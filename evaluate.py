@@ -31,7 +31,7 @@ def evaluate(config, dataloader_fn, images_model, sketches_model, label2index, k
     for iteration, batch in enumerate(images_dataloader):
       images, label_indices = batch 
       images = torch.autograd.Variable(images.to(device))
-      pred_features,_ = images_model(images)
+      pred_features = images_model(images)
       test_images.append(images); image_feature_predictions.append(pred_features); image_label_indices.append(label_indices)  
   image_feature_predictions = torch.cat(image_feature_predictions,dim=0)
   image_label_indices = torch.cat(image_label_indices,dim=0)
@@ -52,7 +52,7 @@ def evaluate(config, dataloader_fn, images_model, sketches_model, label2index, k
     for iteration, batch in enumerate(sketches_dataloader):
       sketches, label_indices = batch 
       sketches = torch.autograd.Variable(sketches.to(device))
-      pred_features,_ = sketches_model(sketches)
+      pred_features = sketches_model(sketches)
       test_sketches.append(sketches); sketch_feature_predictions.append(pred_features); sketch_label_indices.append(label_indices)
 
   sketch_feature_predictions = torch.cat(sketch_feature_predictions,dim=0)

@@ -9,6 +9,8 @@ import glob
 import torchvision
 import torchvision.transforms as T
 
+np.seterr(divide='ignore', invalid='ignore')
+
 def get_data_list(data_dir, labels, label_to_index, section):
   ext = '*.jpg' if section == 'photos' else '*.png'
 
@@ -71,8 +73,9 @@ class SketchyTrainDataset(torch.utils.data.Dataset):
     self.image_filenames, self.image_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'photos') 
     self.sketch_filenames, self.sketch_label_idxs = get_data_list(data_dir, self.labels, self.label_to_index, 'sketches') 
 
-    self.word_vectors_similarity = np.exp(-np.square(cdist(self.embedding, self.embedding, metric = 'euclidean'))/0.1) # 0.1 is temperature
-    # can be cosine similarity also
+    wv_distance = cdist(embedding, embedding, 'minkowski')
+    numerator = np.ones_like(wv_distance); numerator[wv_distance == 0] = 0.0
+    self.word_vectors_similarity = numerator/(wv_distance); self.word_vectors_similarity[wv_distance == 0] = 1.0
 
   def __getitem__(self, idx):
     '''
@@ -86,11 +89,12 @@ class SketchyTrainDataset(torch.utils.data.Dataset):
     positive_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, label_idx)).convert('RGB').resize((224,224))  
 
     '''NEGATIVE IMAGE'''
+    # hard negative mining - closer classes(more similarity value) have a higher probability of selection
     current_label_similarities = self.word_vectors_similarity[label_idx]
     negative_labels = [x for x in self.label_to_index.values() if x != label_idx]
     negative_labels_similarities = [current_label_similarities[x] for x in negative_labels]
-    negative_labels_similarities_norms = np.linalg.norm(negative_labels_similarities, ord = 1) # Returns sum over absolute values
-    negative_labels_similarities /= negative_labels_similarities_norms
+    negative_labels_similarities_norms = np.linalg.norm(negative_labels_similarities, ord = 1) 
+    negative_labels_similarities /= negative_labels_similarities_norms # prob
     chosen_negative_label_idx = np.random.choice(negative_labels, 1, p = negative_labels_similarities)[0]
     negative_image = Image.open(get_random_image(self.image_label_idxs, self.image_filenames, chosen_negative_label_idx)).convert('RGB').resize((224,224)) 
 

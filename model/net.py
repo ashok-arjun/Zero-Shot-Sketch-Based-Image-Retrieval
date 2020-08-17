@@ -40,10 +40,13 @@ class MainModel(nn.Module):
     # features_final_channels = 1024
 
     # vgg16 = torchvision.models.vgg16_bn(pretrained = pretrained, progress = False)
-    # self.features = vgg16.features # vgg16 structure is like features and classifier
+    # self.features = vgg16.features 
     # features_final_channels = 512
 
     densenet121 = torchvision.models.densenet121(pretrained = pretrained, progress = False)
+    for param in densenet121.parameters():
+      param.requires_grad = True
+
     self.features = densenet121.features
     features_final_channels = 1024
 
@@ -53,7 +56,7 @@ class MainModel(nn.Module):
     
     self.embed_block = nn.Sequential(
       
-      nn.Linear(1024, 1024),
+      nn.Linear(features_final_channels, 1024),
       nn.ReLU(),
       nn.Dropout(0.5),
 
@@ -62,7 +65,7 @@ class MainModel(nn.Module):
       nn.Dropout(0.5),
 
       nn.Linear(1024, output_embedding_size)
-    ) #TODO: experiment with the architecture
+    ) 
 
     # self.embed_block = vgg16.classifier
     # self.embed_block._modules['6'] = nn.Linear(4096, output_embedding_size) 
@@ -83,6 +86,15 @@ class MainModel(nn.Module):
 
     x = self.embed_block(x)
 
-    return x, attention_mask
+    return x # return attention mask later
 
 
+class BasicModel(nn.Module):
+  def __init__(self):
+    super(BasicModel, self).__init__()
+    self.net = torchvision.models.densenet121(pretrained = True, progress = False).features
+    self.embed = torch.nn.Conv2d(1024, 300, (7,7))    
+  def forward(self, x):
+    return self.embed(self.net(x)).view(x.shape[0], -1)
+
+# class EmbeddingLossModel(nn.Module):

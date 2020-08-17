@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 
 
-from model.net import MainModel
+from model.net import MainModel, BasicModel
 from model.loss import DetangledJointDomainLoss
 from model.dataloader import Dataloaders
 from evaluate import evaluate
@@ -31,25 +31,18 @@ class Trainer():
     train_dataloader = self.dataloaders.get_train_dataloader(batch_size = batch_size, shuffle=True) 
     num_batches = len(train_dataloader) 
 
-    image_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
-    sketch_model = MainModel(pretrained = config['pretrained'], output_embedding_size = config['embedding_size'], use_attention = config['use_attention'])
-    loss_model = DetangledJointDomainLoss(input_size = config['embedding_size'], grl_lambda = config['grl_lambda'], w_dom = config['w_dom'], w_triplet = config['w_triplet'], w_sem = config['w_sem'], device = device)
+    image_model = BasicModel()
+    sketch_model = BasicModel()
 
-    image_model = image_model.to(device); sketch_model = sketch_model.to(device); loss_model = loss_model.to(device);
+    image_model = image_model.to(device); sketch_model = sketch_model.to(device)
 
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
-    params.extend([param for param in loss_model.parameters() if param.requires_grad == True])
+
     print('A total of %d parameters in present model' % (len(params)))
-    #TODO: try different optimizers for different models
 
     optimizer = torch.optim.Adam(params, lr=config['lr'])
-
-    if checkpoint_file:
-      file_path = checkpoint_file if local else wandb.restore(checkpoint_file)
-      load_checkpoint(file_path, image_model, sketch_model, loss_model, optimizer)
-      print('Loaded checkpoint from %s storage:' % ('local' if local else 'cloud'))
-    
+    criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
@@ -57,14 +50,11 @@ class Trainer():
     print('Training...')    
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_loss_total = RunningAverage()
-      accumulated_loss_dom = RunningAverage()
-      accumulated_loss_sem = RunningAverage()
-      accumulated_loss_triplet = RunningAverage()
       accumulated_iteration_time = RunningAverage()
 
       epoch_start_time = time.time()
 
-      image_model = image_model.train(); sketch_model.train(); loss_model.train()
+      image_model = image_model.train(); sketch_model.train()
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
@@ -79,17 +69,13 @@ class Trainer():
         negatives = torch.autograd.Variable(negatives.to(device)); label_embeddings = torch.autograd.Variable(label_embeddings.to(device))
 
         '''INFERENCE AND LOSS'''
-        pred_sketch_features, sketch_attn = sketch_model(anchors)
-        pred_positives_features, positives_attn = image_model(positives)
-        pred_negatives_features, negatives_attn = image_model(negatives)
+        pred_sketch_features = sketch_model(anchors)
+        pred_positives_features = image_model(positives)
+        pred_negatives_features = image_model(negatives)
 
-        total_loss, loss_domain, loss_triplet, loss_semantic = loss_model(pred_sketch_features, pred_positives_features,
-                                                                          pred_negatives_features, label_embeddings,
-                                                                          epoch) # epoch is sent to anneal/temper domain GRL lambda
+        total_loss = criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
+
         accumulated_loss_total.update(total_loss, batch_size)
-        accumulated_loss_dom.update(loss_domain, batch_size)
-        accumulated_loss_sem.update(loss_semantic, batch_size)
-        accumulated_loss_triplet.update(loss_triplet, batch_size)
         
         '''OPTIMIZATION'''
         total_loss.backward()
@@ -103,15 +89,12 @@ class Trainer():
         if iteration % config['print_every'] == 0:
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')), end = ' ')
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
-          print('Total loss: %f(%f); Domain adversarial loss: %f(%f); Semantic loss: %f(%f); Triplet loss: %f(%f)' % \
-          (total_loss, accumulated_loss_total(), loss_domain, accumulated_loss_dom(), loss_semantic, accumulated_loss_sem(), loss_triplet, accumulated_loss_triplet()))
-          wandb.log({'Average Domain adversarial loss': accumulated_loss_dom()}, step = wandb_step)
-          wandb.log({'Average Semantic loss': accumulated_loss_sem()}, step = wandb_step)
-          wandb.log({'Average Triplet loss': accumulated_loss_triplet()}, step = wandb_step)
+          print('Total loss: %f(%f);' % \
+          (total_loss, accumulated_loss_total()))
+          wandb.log({'Average Total loss': accumulated_loss_total()}, step = wandb_step)
           save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
-                         'loss_model': loss_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
                         checkpoint_dir = 'experiments/')
           
@@ -121,16 +104,15 @@ class Trainer():
       lr_scheduler.step()
       torch.cuda.empty_cache()
 
-      sketches, image_grids, test_mAP = evaluate(config, self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict)
+      sketches, image_grids, test_mAP = evaluate(config, self.dataloaders.get_full_train_dataloader, image_model, sketch_model, self.dataloaders.train_dict)
 
       wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
 
-      wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
+      wandb.log({'Average Training mAP': test_mAP}, step = wandb_step)
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
-                         'loss_model': loss_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
                         checkpoint_dir = 'experiments/', save_to_cloud = True)
       print('Saved epoch to cloud!')
