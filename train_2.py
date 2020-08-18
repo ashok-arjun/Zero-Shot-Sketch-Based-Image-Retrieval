@@ -16,11 +16,6 @@ from model.dataloader import Dataloaders
 from evaluate import evaluate
 from utils import *
 
-
-def cosine_similarity_loss(x, y):
-  cosine_similarity = torch.autograd.Variable(x.unsqueeze(1).bmm(y.unsqueeze(2)).squeeze() )
-  return torch.mean((1.0-cosine_similarity)/2)
-
 class Trainer():
   def __init__(self, data_dir):
     self.dataloaders = Dataloaders(data_dir)
@@ -43,7 +38,7 @@ class Trainer():
 
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
-    params.extend([param for param in embedding_model.parameters() if param.requires_grad == True])   
+    # params.extend([param for param in embedding_model.parameters() if param.requires_grad == True])   
 
     print('A total of %d parameters are present in the models' % (len(params)))
 
@@ -83,20 +78,20 @@ class Trainer():
         pred_positives_features = image_model(positives)
         pred_negatives_features = image_model(negatives)
 
-        pred_positives_embedding_loss = embedding_model(pred_positives_features, label_embeddings)
-        pred_sketch_embedding_loss = embedding_model(pred_sketch_features, label_embeddings)
-        pred_negatives_embedding_loss = embedding_model(pred_negatives_features, label_embeddings)
+        # pred_positives_embedding_loss = embedding_model(pred_positives_features, label_embeddings)
+        # pred_sketch_embedding_loss = embedding_model(pred_sketch_features, label_embeddings)
+        # pred_negatives_embedding_loss = embedding_model(pred_negatives_features, label_embeddings)
 
         triplet_loss = criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
-        embedding_loss = pred_negatives_embedding_loss + pred_sketch_embedding_loss - pred_negatives_embedding_loss
+        # embedding_loss = pred_positives_embedding_loss + pred_sketch_embedding_loss - pred_negatives_embedding_loss
 
         accumulated_triplet_loss.update(triplet_loss, batch_size)
-        accumulated_embedding_loss.update(embedding_loss, batch_size)
+        # accumulated_embedding_loss.update(embedding_loss, batch_size)
         
         '''OPTIMIZATION'''
-        total_loss = triplet_loss + embedding_loss
-        total_loss.backward(retain_graph = True)
-        embedding_loss.backward()
+        total_loss = triplet_loss
+        # total_loss += embedding_loss
+        total_loss.backward()
         optimizer.step()
 
         '''TIME UTILS & PRINTING'''
@@ -107,11 +102,11 @@ class Trainer():
         if iteration % config['print_every'] == 0:
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')).replace(microsecond = 0), end = ' ')
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
-          print('Triplet loss: %f(%f); Embedding loss: %f(%f)' % \
-          (triplet_loss, accumulated_triplet_loss(), embedding_loss, accumulated_embedding_loss()))
+          print('Triplet loss: %f(%f);' % (triplet_loss, accumulated_triplet_loss()))
+          # print('Embedding loss: %f(%f)' % (embedding_loss, accumulated_embedding_loss()))
 
           wandb.log({'Average Triplet loss': accumulated_triplet_loss()}, step = wandb_step)
-          wandb.log({'Average Embedding loss': accumulated_embedding_loss()}, step = wandb_step)
+          # wandb.log({'Average Embedding loss': accumulated_embedding_loss()}, step = wandb_step)
           
       '''END OF EPOCH'''
       epoch_end_time = time.time()

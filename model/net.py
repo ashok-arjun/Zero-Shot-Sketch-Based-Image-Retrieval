@@ -100,6 +100,7 @@ class BasicModel(nn.Module):
 
 def cosine_similarity_loss(x, y):
   cosine_similarity = x.unsqueeze(1).bmm(y.unsqueeze(2)).squeeze()
+  cosine_similarity /= x.norm(p=2, dim=1) * y.norm(p=2,dim=1) 
   return torch.mean((1.0-cosine_similarity)/2)
 
 
@@ -121,7 +122,7 @@ class EmbeddingLossModel(nn.Module):
       nn.ReLU(inplace = True),
 
       nn.Linear(512, 300),
-      nn.ReLU(inplace = True),
+      nn.ReLU(inplace = True)
     )
 
   def forward(self, x, y):

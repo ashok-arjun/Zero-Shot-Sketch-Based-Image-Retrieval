@@ -5,10 +5,11 @@
 *.zip
 *.pyc
 *.log
-*.ipynb
 *.jpeg
 *.jpg
 *.png
+*.tar
+*.pth.tar
 settings
 
 
