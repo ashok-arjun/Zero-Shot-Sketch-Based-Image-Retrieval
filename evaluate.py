@@ -12,12 +12,11 @@ import wandb
 from model.net import MainModel
 from utils import *
 
-def evaluate(config, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
+def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
 
-  batch_size = config['test_batch_size']
   images_dataloader = dataloader_fn(batch_size = batch_size, section = 'photos', shuffle = False)
   sketches_dataloader = dataloader_fn(batch_size = batch_size, section = 'sketches', shuffle = False)
 

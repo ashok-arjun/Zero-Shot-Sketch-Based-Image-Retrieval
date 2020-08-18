@@ -118,7 +118,7 @@ class Trainer():
       lr_scheduler.step()
       torch.cuda.empty_cache()
 
-      sketches, image_grids, test_mAP = evaluate(config, self.dataloaders.get_full_train_dataloader, image_model, sketch_model, self.dataloaders.train_dict)
+      sketches, image_grids, test_mAP = evaluate(config['test_batch_size'], self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict)
 
       wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)

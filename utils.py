@@ -23,13 +23,12 @@ def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
     if save_to_cloud:
       torch.save(state, os.path.join(wandb.run.dir, file_name)); wandb.save(file_name)
 
-def load_checkpoint(checkpoint, image_model, sketch_model, loss_model, optimizer=None):
+def load_checkpoint(checkpoint, image_model, sketch_model, optimizer=None):
     if not os.path.exists(checkpoint):
         raise("File doesn't exist {}".format(checkpoint))
     checkpoint = torch.load(checkpoint)
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
-    loss_model.load_state_dict(checkpoint['loss_model'])
 
     if optimizer:
         optimizer.load_state_dict(checkpoint['optim_dict'])
