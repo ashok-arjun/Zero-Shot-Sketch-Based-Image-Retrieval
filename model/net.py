@@ -93,9 +93,9 @@ class BasicModel(nn.Module):
   def __init__(self):
     super(BasicModel, self).__init__()
     self.net = torchvision.models.densenet121(pretrained = True, progress = False).features
-    self.last_conv = torch.nn.Conv2d(1024,1024,(7,7)) # TRY CHANGING    
+    self.last_layer = torch.nn.MaxPool2d((7,7)) 
   def forward(self, x):
-    return self.last_conv(self.net(x)).view(x.shape[0], -1)
+    return self.last_layer(self.net(x)).view(x.shape[0], -1)
 
 
 def cosine_similarity_loss(x, y):
@@ -105,7 +105,7 @@ def cosine_similarity_loss(x, y):
 
 
 class EmbeddingLossModel(nn.Module):
-  '''This model tries to reconstruct the embedding in 300 dimensions(Word2Vec/GloVe) from the output of the Basic Model(4096 dim)'''
+  '''This model tries to reconstruct the embedding in 300 dimensions(Word2Vec/GloVe) from the output of the Basic Model'''
   def __init__(self):
     super(EmbeddingLossModel, self).__init__()
     self.net = nn.Sequential(

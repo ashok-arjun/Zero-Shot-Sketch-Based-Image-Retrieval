@@ -32,9 +32,11 @@ class Trainer():
 
     image_model = BasicModel()
     sketch_model = BasicModel()
-    embedding_model = EmbeddingLossModel()
+    # embedding_model = EmbeddingLossModel()
 
-    image_model = image_model.to(device); sketch_model = sketch_model.to(device); embedding_model = embedding_model.to(device)
+    image_model = image_model.to(device); sketch_model = sketch_model.to(device); 
+    
+    # embedding_model = embedding_model.to(device)
 
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
@@ -51,7 +53,7 @@ class Trainer():
     print('Training...')    
 
     accumulated_triplet_loss = RunningAverage()
-    accumulated_embedding_loss = RunningAverage()
+    # accumulated_embedding_loss = RunningAverage()
 
     for epoch in range(config['start_epoch'], config['epochs']):
 
@@ -59,7 +61,9 @@ class Trainer():
 
       epoch_start_time = time.time()
 
-      image_model = image_model.train(); sketch_model.train(); embedding_model.train()
+      image_model = image_model.train(); 
+      sketch_model.train(); 
+      # embedding_model.train()
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
