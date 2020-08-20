@@ -139,7 +139,7 @@ class Dataloaders:
     train_dataloader = torch.utils.data.DataLoader(self.train_dataset, 
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
-                                                  num_workers = 4) 
+                                                  num_workers = 0) 
     return train_dataloader
 
 
@@ -152,7 +152,7 @@ class Dataloaders:
     test_dataloader = torch.utils.data.DataLoader(dataset, 
                                                   batch_size = batch_size,
                                                   shuffle = shuffle,
-                                                  num_workers = 1)
+                                                  num_workers = 0)
     return test_dataloader                                              
 
   def get_full_train_dataloader(self, batch_size, section, shuffle = False):
@@ -161,7 +161,7 @@ class Dataloaders:
     dataloader = torch.utils.data.DataLoader(dataset, 
                                             batch_size = batch_size,
                                             shuffle = shuffle,
-                                            num_workers = 1)
+                                            num_workers = 0)
     return dataloader   
 
 
