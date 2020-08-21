@@ -123,7 +123,7 @@ class Trainer():
       wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
 
-      wandb.log({'Average Training mAP': test_mAP}, step = wandb_step)
+      wandb.log({'Average mAP': test_mAP}, step = wandb_step)
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),

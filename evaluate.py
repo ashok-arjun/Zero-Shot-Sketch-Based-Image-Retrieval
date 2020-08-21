@@ -69,14 +69,25 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
   sketch_label_indices = sketch_label_indices.cpu().numpy() 
 
   distance = cdist(sketch_feature_predictions, image_feature_predictions, 'minkowski')
+  distance_sort_order = np.argsort(distance, axis = 1)
+  distance = np.sort(distance, axis = 1)
   similarity = 1.0/distance 
 
   is_correct_label_index = 1 * (np.expand_dims(sketch_label_indices, axis = 1) == np.expand_dims(image_label_indices, axis = 0))
+  print(is_correct_label_index.shape)
+  is_correct_label_index = np.array([is_correct_label_index[i][distance_sort_order[i]] for i in range(is_correct_label_index.shape[0])])
+  print(is_correct_label_index.shape)
 
+  return image_feature_predictions, sketch_feature_predictions, image_label_indices, sketch_label_indices
   average_precision_scores = []
   for i in range(sketch_label_indices.shape[0]):
     average_precision_scores.append(average_precision_score(is_correct_label_index[i], similarity[i])) 
   average_precision_scores = np.array(average_precision_scores)
+
+  average_precision_scores_at_200 = []
+  for i in range(sketch_label_indices.shape[0]):
+    average_precision_scores_at_200.append(average_precision_score(is_correct_label_index[i][:200], similarity[i][:200])) 
+  average_precision_scores_at_200 = np.array(average_precision_scores_at_200)
 
   index2label = {v: k for k, v in label2index.items()}
   for cls in set(sketch_label_indices):
