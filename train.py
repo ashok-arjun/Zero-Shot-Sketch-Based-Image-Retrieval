@@ -98,7 +98,7 @@ class Trainer():
         image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
         sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
 
-        domain_loss_images = domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images.detach(), sketch_domain_targets)
+        domain_loss_images = domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images.detach(), image_domain_targets)
         accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
         domain_loss_sketches = domain_criterion(domain_pred_sketches, sketch_domain_targets)
         accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])
