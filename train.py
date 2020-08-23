@@ -7,11 +7,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.utils as vutils 
-from torch.utils.tensorboard import SummaryWriter
 import wandb
 
 
-from model.net import BasicModel, EmbeddingLossModel
+from model.net import BasicModel, DomainAdversarialNet
 from model.dataloader import Dataloaders
 from evaluate import evaluate
 from utils import *
@@ -30,37 +29,43 @@ class Trainer():
     train_dataloader = self.dataloaders.get_train_dataloader(batch_size = batch_size, shuffle=True) 
     num_batches = len(train_dataloader) 
 
-    image_model = BasicModel()
-    sketch_model = BasicModel()
+    image_model = BasicModel().to(device)
+    sketch_model = BasicModel().to(device) 
 
-    image_model = image_model.to(device); sketch_model = sketch_model.to(device); 
+    domain_net = DomainAdversarialNet().to(device).train()    
     
-
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
-
-    print('A total of %d parameters are present in the models' % (len(params)))
-
     optimizer = torch.optim.Adam(params, lr=config['lr'])
+
+    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'] * 1e1)
+
     criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = config['lr_scheduler_step_size'], gamma = 0.1)
-    for i in range(config['start_epoch']):
-      lr_scheduler.step() 
+    domain_criterion = nn.BCELoss()
+
     wandb_step = config['start_epoch'] * num_batches -1 
 
+    # # DEFAULT load checkpoint
+    # if checkpoint:
+    #   load_checkpoint(image_model, sketch_model, optimizer)
+
     if checkpoint:
-      load_checkpoint(image_model, sketch_model, optimizer)
+      load_checkpoint_other(image_model, sketch_model, domain_net, optimizer, domain_optim)
 
     print('Training...')    
     accumulated_triplet_loss = RunningAverage()
+
+    accumulated_image_domain_loss = RunningAverage()
+    accumulated_sketch_domain_loss = RunningAverage()
+
     for epoch in range(config['start_epoch'], config['epochs']):
 
       accumulated_iteration_time = RunningAverage()
 
       epoch_start_time = time.time()
 
-      image_model = image_model.train(); 
-      sketch_model.train(); 
+      image_model.train() 
+      sketch_model.train() 
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
@@ -80,25 +85,54 @@ class Trainer():
         pred_negatives_features = image_model(negatives)
 
         triplet_loss = criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
+        accumulated_triplet_loss.update(triplet_loss, anchors.shape[0])        
 
-        accumulated_triplet_loss.update(triplet_loss, batch_size)
+        '''DOMAIN ADVERSARIAL TRAINING''' # vannila GANs for now. Later - add randomness in outputs of generator, or lower the label
         
-        '''OPTIMIZATION'''
-        total_loss = triplet_loss
-        total_loss.backward()
-        optimizer.step()
+        '''ADVERSARIAL'''
+        domain_optim.zero_grad()
+        domain_pred_p_images = domain_net(pred_positives_features.detach())
+        domain_pred_n_images = domain_net(pred_negatives_features.detach())
+        domain_pred_sketches = domain_net(pred_sketch_features.detach())
 
-        '''TIME UTILS & PRINTING'''
+        image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
+        sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
+
+        domain_loss_images = domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images.detach(), sketch_domain_targets)
+        accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
+        domain_loss_sketches = domain_criterion(domain_pred_sketches, sketch_domain_targets)
+        accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])
+        total_domain_loss = domain_loss_images + domain_loss_sketches
+        total_domain_loss.backward(retain_graph=True)
+        domain_optim.step()
+
+        '''ALLIED'''
+        allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
+
+        '''OPTIMIZATION'''
+        optimizer.zero_grad()
+        total_loss = triplet_loss
+        total_loss += allied_loss_sketches
+        total_loss.backward()
+        optimizer.step()      
+
+        '''LOGGER'''
         time_end = time.time()
         accumulated_iteration_time.update(time_end - time_start)
-        eta_cur_epoch = str(datetime.timedelta(seconds = int(accumulated_iteration_time() * (num_batches - iteration))))
-
+        eta_cur_epoch = str(datetime.timedelta(seconds = int(accumulated_iteration_time() * (num_batches - iteration))))        
         if iteration % config['print_every'] == 0:
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')).replace(microsecond = 0), end = ' ')
+
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
           print('Triplet loss: %f(%f);' % (triplet_loss, accumulated_triplet_loss()))
 
           wandb.log({'Average Triplet loss': accumulated_triplet_loss()}, step = wandb_step)
+
+
+          print('Sketch domain loss: %f; Image Domain loss: %f' % (accumulated_sketch_domain_loss(), accumulated_image_domain_loss()))
+          wandb.log({'Average Sketch Domain loss': accumulated_sketch_domain_loss()}, step = wandb_step)
+          wandb.log({'Average Image Domain loss': accumulated_image_domain_loss()}, step = wandb_step)
+
           
       '''END OF EPOCH'''
       epoch_end_time = time.time()
@@ -112,10 +146,20 @@ class Trainer():
       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
 
       wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
+
+      # DEFAULT save checkpoint
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
+                        checkpoint_dir = 'experiments/', save_to_cloud = True)
+
+      save_checkpoint({'iteration': wandb_step, 
+                        'image_model': image_model.state_dict(), 
+                        'sketch_model': sketch_model.state_dict(),
+                        'domain_net': domain_net.state_dict(),
+                        'optim_dict': optimizer.state_dict(),
+                        'domain_optim_dict': domain_optim.state_dict()},
                         checkpoint_dir = 'experiments/', save_to_cloud = True)
       print('Saved epoch to cloud!')
       print('\n\n\n')

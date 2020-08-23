@@ -31,7 +31,16 @@ def load_checkpoint(checkpoint, image_model, sketch_model, optimizer):
     sketch_model.load_state_dict(checkpoint['sketch_model'])
     optimizer.load_state_dict(checkpoint['optim_dict'])
 
-    return None
+def load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim):
+    if not os.path.exists(checkpoint):
+        raise("File doesn't exist {}".format(checkpoint))
+    checkpoint = torch.load(checkpoint)
+    image_model.load_state_dict(checkpoint['image_model'])
+    sketch_model.load_state_dict(checkpoint['sketch_model'])
+    domain_net.load_state_dict(checkpoint['domain_net'])
+    optimizer.load_state_dict(checkpoint['optim_dict'])
+    domain_optim.load_state_dict(checkpoint['domain_optim_dict'])
+
 
 def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display):
 

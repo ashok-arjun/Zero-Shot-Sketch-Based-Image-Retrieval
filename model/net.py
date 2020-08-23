@@ -51,30 +51,27 @@ class DomainAdversarialNet(nn.Module):
   from both the image and sketch model to be similar).
   '''
 
-  # design considerations ---> WGAN/GAN : use the bin. cross entropy loss first, if promising, we can use the critic loss
-
-  # Network capacity: BasicModel uses a densenet backbone. Let us have a 5 LAYER FEED FORWARD NETWORK
-
-  # else: reshape embedding into 1x1x300 and convolutional layers(but they do not have any meaning/weights worth sharing)
-
   def __init__(self):
-    super(EmbeddingLossModel, self).__init__()
+    super(DomainAdversarialNet, self).__init__()
     self.net = nn.Sequential(
       nn.Linear(1024, 1024),
+      nn.BatchNorm1d(1024),
       nn.ReLU(inplace = True),
 
       nn.Linear(1024, 1024),
+      nn.BatchNorm1d(1024),      
       nn.ReLU(inplace = True),
 
       nn.Linear(1024, 1024),
+      nn.BatchNorm1d(1024),
       nn.ReLU(inplace = True),
 
-      nn.Linear(1024, 512),
+      nn.Linear(1024, 1024),
+      nn.BatchNorm1d(1024),
       nn.ReLU(inplace = True),
 
-      nn.Linear(512, 300),
-      nn.ReLU(inplace = True)
+      nn.Linear(1024, 1)
     )
 
-  def forward(self, x, y):
-    return cosine_similarity_loss(self.net(x), y)
+  def forward(self, x):
+    return torch.sigmoid(self.net(x))
