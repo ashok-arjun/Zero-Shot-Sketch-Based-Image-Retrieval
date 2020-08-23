@@ -22,7 +22,7 @@ class Trainer():
     self.train_dict = self.dataloaders.train_dict
     self.test_dict = self.dataloaders.test_dict
   
-  def train_and_evaluate(self, config, checkpoint_file, local):
+  def train_and_evaluate(self, config, checkpoint):
 
     batch_size = config['batch_size']
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -47,10 +47,12 @@ class Trainer():
     for i in range(config['start_epoch']):
       lr_scheduler.step() 
     wandb_step = config['start_epoch'] * num_batches -1 
+
+    if checkpoint:
+      load_checkpoint(image_model, sketch_model, optimizer)
+
     print('Training...')    
-
     accumulated_triplet_loss = RunningAverage()
-
     for epoch in range(config['start_epoch'], config['epochs']):
 
       accumulated_iteration_time = RunningAverage()

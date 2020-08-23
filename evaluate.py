@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 import wandb
 
-from model.net import MainModel
 from utils import *
 
 def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
