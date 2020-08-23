@@ -137,7 +137,6 @@ class Trainer():
       '''END OF EPOCH'''
       epoch_end_time = time.time()
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
-      lr_scheduler.step()
       torch.cuda.empty_cache()
 
       sketches, image_grids, test_mAP = evaluate(config['test_batch_size'], self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict, k = 5, num_display = 5)
