@@ -141,12 +141,11 @@ class Trainer():
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
       torch.cuda.empty_cache()
 
-      sketches, image_grids, test_mAP = evaluate(config['test_batch_size'], self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict, k = 5, num_display = 5)
-
-      wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
-      wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
-
-      wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
+      
+#       sketches, image_grids, test_mAP = evaluate(config['test_batch_size'], self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict, k = 5, num_display = 5)
+#       wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
+#       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
+#       wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
 
 #       save_checkpoint({'iteration': wandb_step, 
 #                         'image_model': image_model.state_dict(), 
