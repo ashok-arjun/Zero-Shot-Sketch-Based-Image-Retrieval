@@ -38,7 +38,7 @@ class Trainer():
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'])
+    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'] * 1e1)
 
     criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
     domain_criterion = nn.BCELoss()
@@ -69,10 +69,7 @@ class Trainer():
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
-
         time_start = time.time()        
-
-        optimizer.zero_grad()
 
         '''GETTING THE DATA'''
         anchors, positives, negatives, label_embeddings, positive_label_idxs, negative_label_idxs = batch
@@ -88,9 +85,19 @@ class Trainer():
         accumulated_triplet_loss.update(triplet_loss, anchors.shape[0])        
 
         '''DOMAIN ADVERSARIAL TRAINING''' # vannila GANs for now. Later - add randomness in outputs of generator, or lower the label
+
+        '''ALLIED + OPTIMIZATION'''
+        allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
+        if epoch < 25:
+          allied_loss_sketches *= epoch/25
+          
+          
+        optimizer.zero_grad()  
+        total_loss = triplet_loss + allied_loss_sketches
+        total_loss.backward()
+        optimizer.step()  
         
-        '''ADVERSARIAL'''
-        domain_optim.zero_grad()
+        '''ADVERSARIAL + OPTIMIZATION'''
         domain_pred_p_images = domain_net(pred_positives_features.detach())
         domain_pred_n_images = domain_net(pred_negatives_features.detach())
         domain_pred_sketches = domain_net(pred_sketch_features.detach())
@@ -102,21 +109,11 @@ class Trainer():
         accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
         domain_loss_sketches = domain_criterion(domain_pred_sketches, sketch_domain_targets)
         accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])
-        total_domain_loss = domain_loss_images + domain_loss_sketches
-        total_domain_loss.backward(retain_graph=True)
-        domain_optim.step()
-
-        '''ALLIED'''
-        allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
-        if epoch < 25:
-          allied_loss_sketches *= epoch/25
-
-        '''OPTIMIZATION'''
-        optimizer.zero_grad()
-        total_loss = triplet_loss
-        total_loss += allied_loss_sketches
-        total_loss.backward()
-        optimizer.step()      
+        
+        domain_optim.zero_grad()         
+        total_domain_loss = domain_loss_images + domain_loss_sketches        
+        total_domain_loss.backward()        
+        domain_optim.step()                          
 
         '''LOGGER'''
         time_end = time.time()
