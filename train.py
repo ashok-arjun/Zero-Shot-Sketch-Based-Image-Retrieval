@@ -38,7 +38,7 @@ class Trainer():
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'] * 1e1)
+    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'])
 
     criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
     domain_criterion = nn.BCELoss()
@@ -108,6 +108,8 @@ class Trainer():
 
         '''ALLIED'''
         allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
+        if epoch < 25:
+          allied_loss_sketches *= epoch/25
 
         '''OPTIMIZATION'''
         optimizer.zero_grad()
@@ -146,12 +148,11 @@ class Trainer():
 
       wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
 
-      # DEFAULT save checkpoint
-      save_checkpoint({'iteration': wandb_step, 
-                        'image_model': image_model.state_dict(), 
-                        'sketch_model': sketch_model.state_dict(),
-                        'optim_dict': optimizer.state_dict()},
-                        checkpoint_dir = 'experiments/', save_to_cloud = True)
+#       save_checkpoint({'iteration': wandb_step, 
+#                         'image_model': image_model.state_dict(), 
+#                         'sketch_model': sketch_model.state_dict(),
+#                         'optim_dict': optimizer.state_dict()},
+#                         checkpoint_dir = 'experiments/', save_to_cloud = True)
 
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
@@ -159,6 +160,6 @@ class Trainer():
                         'domain_net': domain_net.state_dict(),
                         'optim_dict': optimizer.state_dict(),
                         'domain_optim_dict': domain_optim.state_dict()},
-                        checkpoint_dir = 'experiments/', save_to_cloud = True)
+                         checkpoint_dir = config['checkpoint_dir'], save_to_cloud = True)
       print('Saved epoch to cloud!')
       print('\n\n\n')
