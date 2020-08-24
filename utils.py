@@ -18,7 +18,7 @@ class RunningAverage():
 
 
 def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
-    file_name = 'last_state.pth.tar'
+    file_name = 'last.pth.tar'
     torch.save(state, os.path.join(checkpoint_dir, file_name))    
     if save_to_cloud:
       torch.save(state, os.path.join(wandb.run.dir, file_name)); wandb.save(file_name)
