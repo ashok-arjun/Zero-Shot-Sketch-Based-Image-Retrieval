@@ -19,7 +19,7 @@ class RunningAverage():
 
 def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
     file_name = 'last_state.pth.tar'
-    # torch.save(state, os.path.join(checkpoint_dir, file_name))    
+    torch.save(state, os.path.join(checkpoint_dir, file_name))    
     if save_to_cloud:
       torch.save(state, os.path.join(wandb.run.dir, file_name)); wandb.save(file_name)
 
@@ -35,6 +35,7 @@ def load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, opt
     if not os.path.exists(checkpoint):
         raise("File doesn't exist {}".format(checkpoint))
     checkpoint = torch.load(checkpoint)
+    print('Loading the models from the end of net iteration %d' % (checkpoint['iteration']))
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
     domain_net.load_state_dict(checkpoint['domain_net'])
