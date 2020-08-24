@@ -86,11 +86,15 @@ class Trainer():
 
         '''DOMAIN ADVERSARIAL TRAINING''' # vannila GANs for now. Later - add randomness in outputs of generator, or lower the label
 
+        '''DEFINE TARGETS'''
+          
+        image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
+        sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
+          
         '''ALLIED + OPTIMIZATION'''
         allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
         if epoch < 25:
-          allied_loss_sketches *= epoch/25
-          
+          allied_loss_sketches *= epoch/25          
           
         optimizer.zero_grad()  
         total_loss = triplet_loss + allied_loss_sketches
@@ -102,8 +106,6 @@ class Trainer():
         domain_pred_n_images = domain_net(pred_negatives_features.detach())
         domain_pred_sketches = domain_net(pred_sketch_features.detach())
 
-        image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
-        sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
 
         domain_loss_images = domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images, image_domain_targets)
         accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
