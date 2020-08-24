@@ -160,6 +160,6 @@ class Trainer():
                         'domain_net': domain_net.state_dict(),
                         'optim_dict': optimizer.state_dict(),
                         'domain_optim_dict': domain_optim.state_dict()},
-                         checkpoint_dir = config['checkpoint_dir'], save_to_cloud = True)
+                         checkpoint_dir = config['checkpoint_dir'], save_to_cloud = (epoch % config['save_to_cloud_every'] == 0))
       print('Saved epoch to cloud!')
       print('\n\n\n')
