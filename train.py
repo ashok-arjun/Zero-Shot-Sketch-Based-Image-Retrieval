@@ -50,7 +50,7 @@ class Trainer():
     #   load_checkpoint(image_model, sketch_model, optimizer)
 
     if checkpoint:
-      load_checkpoint_other(image_model, sketch_model, domain_net, optimizer, domain_optim)
+      load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
 
     print('Training...')    
     accumulated_triplet_loss = RunningAverage()
