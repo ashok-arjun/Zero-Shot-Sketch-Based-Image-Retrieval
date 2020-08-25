@@ -18,10 +18,13 @@ class RunningAverage():
 
 
 def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
+    # saving in only one place now - modify later to uncomment
     file_name = 'last.pth.tar'
-    torch.save(state, os.path.join(checkpoint_dir, file_name))    
+#     torch.save(state, os.path.join(checkpoint_dir, file_name))    
+    torch.save(state, os.path.join(wandb.run.dir, file_name)) 
     if save_to_cloud:
-      torch.save(state, os.path.join(wandb.run.dir, file_name)); wandb.save(file_name)
+#       torch.save(state, os.path.join(wandb.run.dir, file_name)) 
+      wandb.save(file_name)
 
 def load_checkpoint(checkpoint, image_model, sketch_model, optimizer):
     if not os.path.exists(checkpoint):
