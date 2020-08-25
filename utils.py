@@ -35,7 +35,7 @@ def load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, opt
     if not os.path.exists(checkpoint):
         raise("File doesn't exist {}".format(checkpoint))
     checkpoint = torch.load(checkpoint)
-    print('Loading the models from the end of epoch %d' % (checkpoint['epoch']))
+    print('Loading the models from the end of net iteration %d' % (checkpoint['iteration']))
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
     domain_net.load_state_dict(checkpoint['domain_net'])
