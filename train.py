@@ -152,7 +152,7 @@ class Trainer():
 #                         'optim_dict': optimizer.state_dict()},
 #                         checkpoint_dir = 'experiments/', save_to_cloud = True)
 
-      save_checkpoint({'iteration': wandb_step, 
+      save_checkpoint({'epoch': epoch, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
                         'domain_net': domain_net.state_dict(),
