@@ -53,13 +53,12 @@ class Trainer():
       load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
 
     print('Training...')    
-    accumulated_triplet_loss = RunningAverage()
-
-    accumulated_image_domain_loss = RunningAverage()
-    accumulated_sketch_domain_loss = RunningAverage()
+    
 
     for epoch in range(config['start_epoch'], config['epochs']):
-
+      accumulated_triplet_loss = RunningAverage()
+      accumulated_image_domain_loss = RunningAverage()
+      accumulated_sketch_domain_loss = RunningAverage()
       accumulated_iteration_time = RunningAverage()
 
       epoch_start_time = time.time()
