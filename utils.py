@@ -20,6 +20,7 @@ class RunningAverage():
 def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
     # saving in only one place now - modify later to uncomment
     file_name = 'last.pth.tar'
+    if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 #     torch.save(state, os.path.join(checkpoint_dir, file_name))    
     torch.save(state, os.path.join(wandb.run.dir, file_name)) 
     if save_to_cloud:
