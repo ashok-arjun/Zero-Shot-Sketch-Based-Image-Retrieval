@@ -87,8 +87,10 @@ class Trainer():
         sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
           
         '''ALLIED + OPTIMIZATION'''
-        allied_loss_sketches = domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
-        if epoch < 25:
+        allied_loss_sketches = config['domain_loss_ratio'] * domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
+        if epoch < 5:
+          allied_loss_sketches = 0
+        elif epoch < 25:
           allied_loss_sketches *= epoch/25          
           
         optimizer.zero_grad()  
