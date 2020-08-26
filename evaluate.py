@@ -3,11 +3,12 @@ import argparse
 import time
 import datetime
 import pytz 
+import os
+from PIL import Image
 
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.metrics import average_precision_score
-import matplotlib.pyplot as plt
 import torch 
 import torch.nn as nn
 
@@ -26,7 +27,7 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
   sketches_dataloader = dataloader_fn(batch_size = batch_size, section = 'sketches', shuffle = False)
 
   '''IMAGES'''
-  # print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
+  print('Processing the images. Batch size: %d; Number of batches: %d' % (batch_size, len(images_dataloader)))
 
   start_time = time.time()
 
@@ -43,11 +44,11 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
 
   end_time = time.time()
 
-  # print('Processed the images. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
+  print('Processed the images. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
 
 
   '''SKETCHES'''
-  # print('Processing the sketches. Batch size: %d; Number of batches: %d' % (batch_size, len(sketches_dataloader)))
+  print('Processing the sketches. Batch size: %d; Number of batches: %d' % (batch_size, len(sketches_dataloader)))
 
   start_time = time.time()
 
@@ -65,7 +66,7 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
 
   end_time = time.time()
 
-  # print('Processed the sketches. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
+  print('Processed the sketches. Time taken: %s' % (str(datetime.timedelta(seconds = int(end_time - start_time)))))
 
   '''mAP calculation'''
   image_feature_predictions = image_feature_predictions.cpu().numpy() 
@@ -100,6 +101,7 @@ if __name__ == '__main__':
   parser.add_argument('--num_images', type=int, help='Number of random images to retrieve/display for every sketch', default = 0)
   parser.add_argument('--num_sketches', type=int, help='Number of random sketches to display', default = 0)
   parser.add_argument('--batch_size', type=int, help='Batch size to process the test sketches/photos', default = 1)
+  parser.add_argument('--output_dir', help='Directory to save output sketch adn images', default = 'outputs')
 
   args = parser.parse_args()
 
@@ -111,10 +113,10 @@ if __name__ == '__main__':
   load_checkpoint(args.model, image_model, sketch_model)   # change later
   sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches)
   print('Average test mAP: ', test_mAP)
+
+  if not os.path.isdir(args.output_dir):
+    os.mkdir(args.output_dir)
+
   for i in range(args.num_sketches):
-    print('Random sketch ', i)
-    plt.figure()
-    plt.imshow(sketches[i])
-    print('Top %d retrieved images' % (args.num_images))
-    plt.figure()
-    plt.imshow(image_grids[i])
+    Image.fromarray(np.uint8(sketches[i] * 255)).save(os.path.join(args.output_dir,'Sketch_%d.png'%(i)))
+    Image.fromarray(np.uint8(image_grids[i] * 255)).save(os.path.join(args.output_dir,'Images_%d.png'%(i)))
