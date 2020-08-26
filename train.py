@@ -21,7 +21,7 @@ class Trainer():
     self.train_dict = self.dataloaders.train_dict
     self.test_dict = self.dataloaders.test_dict
   
-  def train_and_evaluate(self, config, checkpoint):
+  def train_and_evaluate(self, config, checkpoint=None):
 
     batch_size = config['batch_size']
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -156,3 +156,15 @@ class Trainer():
                          checkpoint_dir = config['checkpoint_dir'], save_to_cloud = (epoch % config['save_to_cloud_every'] == 0))
       print('Saved epoch to cloud!')
       print('\n\n\n')
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Training of SBIR')
+  parser.add_argument('--data', help='Data directory path. Directory should contain two folders - sketches and photos, along with 2 .txt files for the labels', required = True)
+  parser.add_argument('--batch_size', type=int, help='Batch size to process the train sketches/photos', default = 1)
+  parser.add_argument('--checkpoint_dir', help='Directory to save checkpoints', required=True)
+  # fill later
+  args = parser.parse_args()
+
+  trainer = Trainer(args.data_dir)
+  trainer.train_and_evaluate(vars(args))
