@@ -1,3 +1,5 @@
+import argparse
+
 import time
 import datetime
 import pytz 
@@ -5,11 +7,15 @@ import pytz
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.metrics import average_precision_score
+import matplotlib.pyplot as plt
 import torch 
 import torch.nn as nn
-import wandb
 
+from model.net import BasicModel, DomainAdversarialNet
+from model.dataloader import Dataloaders
 from utils import *
+
+
 
 def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -68,22 +74,14 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
   sketch_label_indices = sketch_label_indices.cpu().numpy() 
 
   distance = cdist(sketch_feature_predictions, image_feature_predictions, 'minkowski')
-  # distance_sort_order = np.argsort(distance, axis = 1)
-  # distance = np.sort(distance, axis = 1)
   similarity = 1.0/distance 
 
   is_correct_label_index = 1 * (np.expand_dims(sketch_label_indices, axis = 1) == np.expand_dims(image_label_indices, axis = 0))
-  # is_correct_label_index = np.array([is_correct_label_index[i][distance_sort_order[i]] for i in range(is_correct_label_index.shape[0])])
 
   average_precision_scores = []
   for i in range(sketch_label_indices.shape[0]):
     average_precision_scores.append(average_precision_score(is_correct_label_index[i], similarity[i])) 
   average_precision_scores = np.array(average_precision_scores)
-
-  # average_precision_scores_at_200 = []
-  # for i in range(sketch_label_indices.shape[0]):
-  #   average_precision_scores_at_200.append(average_precision_score(is_correct_label_index[i][:200], similarity[i][:200])) 
-  # average_precision_scores_at_200 = np.array(average_precision_scores_at_200)
 
   index2label = {v: k for k, v in label2index.items()}
   for cls in set(sketch_label_indices):
@@ -94,3 +92,29 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
   sketches, image_grids = get_sketch_images_grids(test_sketches, test_images, similarity, k, num_display)
 
   return sketches, image_grids, mean_average_precision
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Evaluation of SBIR')
+  parser.add_argument('--model', help='Model checkpoint path', required=True)
+  parser.add_argument('--data', help='Data directory path. Directory should contain two folders - sketches and photos, along with 2 .txt files for the labels', required = True)
+  parser.add_argument('--num_images', type=int, help='Number of random images to retrieve/display for every sketch', default = 0)
+  parser.add_argument('--num_sketches', type=int, help='Number of random sketches to display', default = 0)
+  parser.add_argument('--batch_size', type=int, help='Batch size to process the test sketches/photos', default = 1)
+
+  args = parser.parse_args()
+
+  device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+  dataloaders = Dataloaders(args.data)
+  image_model = BasicModel().to(device)
+  sketch_model = BasicModel().to(device) 
+  load_checkpoint_other(args.model, image_model, sketch_model)   # change later
+  sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches)
+  print('Average test mAP: ', test_mAP)
+  for i in range(args.num_sketches):
+    print('Random sketch ', i)
+    plt.figure()
+    plt.imshow(sketches[i])
+    print('Top %d retrieved images' % (args.num_images))
+    plt.figure()
+    plt.imshow(image_grids[i])

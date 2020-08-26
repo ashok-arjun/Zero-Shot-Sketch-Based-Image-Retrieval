@@ -26,28 +26,34 @@ def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
 #       torch.save(state, os.path.join(wandb.run.dir, file_name)) 
       wandb.save(file_name)
 
-def load_checkpoint(checkpoint, image_model, sketch_model, optimizer):
+def load_checkpoint(checkpoint, image_model, sketch_model, optimizer=None):
     if not os.path.exists(checkpoint):
         raise("File doesn't exist {}".format(checkpoint))
     checkpoint = torch.load(checkpoint)
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
-    optimizer.load_state_dict(checkpoint['optim_dict'])
+    if optimizer:
+      optimizer.load_state_dict(checkpoint['optim_dict'])
 
-def load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim):
+def load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net=None, optimizer=None, domain_optim=None):
     if not os.path.exists(checkpoint):
         raise Exception("File {} doesn't exist".format(checkpoint))
     checkpoint = torch.load(checkpoint)
     print('Loading the models from the end of net iteration %d' % (checkpoint['iteration']))
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
-    domain_net.load_state_dict(checkpoint['domain_net'])
-    optimizer.load_state_dict(checkpoint['optim_dict'])
-    domain_optim.load_state_dict(checkpoint['domain_optim_dict'])
+    if domain_net:
+      domain_net.load_state_dict(checkpoint['domain_net'])
+    if optimizer:
+      optimizer.load_state_dict(checkpoint['optim_dict'])
+    if domain_optim:
+      domain_optim.load_state_dict(checkpoint['domain_optim_dict'])
 
 
 def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display):
 
+  if num_display == 0 or k == 0:
+    return None, None
   num_sketches = sketches.shape[0]
   indices = np.random.choice(num_sketches, num_display)
 

@@ -47,7 +47,7 @@ class Trainer():
 
     # # DEFAULT load checkpoint
     # if checkpoint:
-    #   load_checkpoint(image_model, sketch_model, optimizer)
+    #   load_checkpoint(checkpoint, image_model, sketch_model, optimizer)
 
     if checkpoint:
       load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
