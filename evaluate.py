@@ -108,7 +108,7 @@ if __name__ == '__main__':
   dataloaders = Dataloaders(args.data)
   image_model = BasicModel().to(device)
   sketch_model = BasicModel().to(device) 
-  load_checkpoint_other(args.model, image_model, sketch_model)   # change later
+  load_checkpoint(args.model, image_model, sketch_model)   # change later
   sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches)
   print('Average test mAP: ', test_mAP)
   for i in range(args.num_sketches):

@@ -45,12 +45,8 @@ class Trainer():
 
     wandb_step = config['start_epoch'] * num_batches -1 
 
-    # # DEFAULT load checkpoint
-    # if checkpoint:
-    #   load_checkpoint(checkpoint, image_model, sketch_model, optimizer)
-
     if checkpoint:
-      load_checkpoint_other(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
+      load_checkpoint(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
 
     print('Training...')    
     
