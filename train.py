@@ -76,7 +76,7 @@ class Trainer():
         pred_positives_features = image_model(positives)
         pred_negatives_features = image_model(negatives)
 
-        triplet_loss = criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
+        triplet_loss = config['triplet_loss_ratio'] * criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
         accumulated_triplet_loss.update(triplet_loss, anchors.shape[0])        
 
         '''DOMAIN ADVERSARIAL TRAINING''' # vannila GANs for now. Later - add randomness in outputs of generator, or lower the label
@@ -104,9 +104,9 @@ class Trainer():
         domain_pred_sketches = domain_net(pred_sketch_features.detach())
 
 
-        domain_loss_images = domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images, image_domain_targets)
+        domain_loss_images = config['domain_loss_ratio'] * (domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images, image_domain_targets))
         accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
-        domain_loss_sketches = domain_criterion(domain_pred_sketches, sketch_domain_targets)
+        domain_loss_sketches = config['domain_loss_ratio'] * (domain_criterion(domain_pred_sketches, sketch_domain_targets))
         accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])
         
         domain_optim.zero_grad()         
