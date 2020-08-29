@@ -38,7 +38,7 @@ class Trainer():
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'] * 1e1)
+    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'])
 
     criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
     domain_criterion = nn.BCELoss()
