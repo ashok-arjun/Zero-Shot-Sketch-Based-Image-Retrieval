@@ -90,8 +90,8 @@ class Trainer():
         allied_loss_sketches = config['domain_loss_ratio'] * domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
         if epoch < 5:
           allied_loss_sketches = 0
-        elif epoch < 25:
-          allied_loss_sketches *= epoch/25          
+        elif epoch < 15:
+          allied_loss_sketches *= epoch/15          
           
         optimizer.zero_grad()  
         total_loss = triplet_loss + allied_loss_sketches
