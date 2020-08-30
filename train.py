@@ -91,7 +91,7 @@ class Trainer():
         if epoch < 5:
           grl_weight = 0
         elif epoch < config['grl_threshold_epoch']:
-          grl_weight *= epoch/config['grl_threshold_epoch'] 
+          grl_weight = epoch/config['grl_threshold_epoch'] 
         else:
           grl_weight = 1
 
