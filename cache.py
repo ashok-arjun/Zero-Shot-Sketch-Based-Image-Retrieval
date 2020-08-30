@@ -103,19 +103,4 @@ def evaluate(batch_size, dataloaders, images_model, sketches_model, label2index,
 
   similarity_df=pd.DataFrame(data=similarity[0:,0:], index=[i for i in range(similarity.shape[0])], columns=[i for i in range(similarity.shape[1])])
 
-  is_correct_label_index = 1 * (np.expand_dims(sketch_label_indices, axis = 1) == np.expand_dims(image_label_indices, axis = 0))
-
-  average_precision_scores = []
-  for i in range(sketch_label_indices.shape[0]):
-    average_precision_scores.append(average_precision_score(is_correct_label_index[i], similarity[i])) 
-  average_precision_scores = np.array(average_precision_scores)
-
-  index2label = {v: k for k, v in label2index.items()}
-  for cls in set(sketch_label_indices):
-    print('Class: %s, mAP: %f' % (index2label[cls], average_precision_scores[sketch_label_indices == cls].mean()))
-
-  mean_average_precision = average_precision_scores.mean()
-
-  sketches, image_grids = get_sketch_images_grids(test_sketches, test_images, similarity, k, num_display)
-
   return image_df, sketch_df, similarity_df

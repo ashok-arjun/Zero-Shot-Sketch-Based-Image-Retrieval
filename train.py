@@ -12,6 +12,7 @@ import wandb
 
 from model.net import BasicModel, DomainAdversarialNet
 from model.dataloader import Dataloaders
+from model.layers import grad_reverse
 from evaluate import evaluate
 from utils import *
 
@@ -31,22 +32,20 @@ class Trainer():
 
     image_model = BasicModel().to(device)
     sketch_model = BasicModel().to(device) 
-
-    domain_net = DomainAdversarialNet().to(device).train()    
+    domain_net = DomainAdversarialNet().to(device)    
     
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
+    params.extend([param for param in domain_net.parameters() if param.requires_grad == True])
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    domain_optim = torch.optim.Adam(domain_net.parameters(), lr = config['lr'])
-
-    criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
+    criterion = nn.TripletMarginLoss(margin = 0.5, p = 2)
     domain_criterion = nn.BCELoss()
 
     wandb_step = config['start_epoch'] * num_batches -1 
 
     if checkpoint:
-      load_checkpoint(checkpoint, image_model, sketch_model, domain_net, optimizer, domain_optim)
+      load_checkpoint(checkpoint, image_model, sketch_model, domain_net, optimizer)
 
     print('Training...')    
     
@@ -60,10 +59,12 @@ class Trainer():
       epoch_start_time = time.time()
 
       image_model.train() 
-      sketch_model.train() 
+      sketch_model.train()
+      domain_net.train() 
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
+
         time_start = time.time()        
 
         '''GETTING THE DATA'''
@@ -71,7 +72,7 @@ class Trainer():
         anchors = torch.autograd.Variable(anchors.to(device)); positives = torch.autograd.Variable(positives.to(device))
         negatives = torch.autograd.Variable(negatives.to(device)); label_embeddings = torch.autograd.Variable(label_embeddings.to(device))
 
-        '''INFERENCE AND LOSS'''
+        '''MAIN NET INFERENCE AND LOSS'''
         pred_sketch_features = sketch_model(anchors)
         pred_positives_features = image_model(positives)
         pred_negatives_features = image_model(negatives)
@@ -79,40 +80,39 @@ class Trainer():
         triplet_loss = config['triplet_loss_ratio'] * criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
         accumulated_triplet_loss.update(triplet_loss, anchors.shape[0])        
 
-        '''DOMAIN ADVERSARIAL TRAINING''' # vannila GANs for now. Later - add randomness in outputs of generator, or lower the label
+        '''DOMAIN ADVERSARIAL TRAINING''' # vannila generator for now. Later - add randomness in outputs of generator, or lower the label
 
         '''DEFINE TARGETS'''
           
         image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
         sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
           
-        '''ALLIED + OPTIMIZATION'''
-        allied_loss_sketches = config['domain_loss_ratio'] * domain_criterion(domain_net(pred_sketch_features), image_domain_targets)
+        '''GET DOMAIN NET PREDICTIONS FOR INPUTS WITH G.R.L.'''
         if epoch < 5:
-          allied_loss_sketches = 0
-        elif epoch < 15:
-          allied_loss_sketches *= epoch/15          
-          
-        optimizer.zero_grad()  
-        total_loss = triplet_loss + allied_loss_sketches
-        total_loss.backward()
-        optimizer.step()  
-        
-        '''ADVERSARIAL + OPTIMIZATION'''
-        domain_pred_p_images = domain_net(pred_positives_features.detach())
-        domain_pred_n_images = domain_net(pred_negatives_features.detach())
-        domain_pred_sketches = domain_net(pred_sketch_features.detach())
+          grl_weight = 0
+        elif epoch < config['grl_threshold_epoch']:
+          grl_weight *= epoch/config['grl_threshold_epoch'] 
+        else:
+          grl_weight = 1
 
+        domain_pred_p_images = domain_net(grad_reverse(pred_positives_features, grl_weight))
+        domain_pred_n_images = domain_net(grad_reverse(pred_negatives_features, grl_weight))
+        domain_pred_sketches = domain_net(grad_reverse(pred_sketch_features, grl_weight))
+
+        '''DOMAIN LOSS'''
 
         domain_loss_images = config['domain_loss_ratio'] * (domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images, image_domain_targets))
         accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
         domain_loss_sketches = config['domain_loss_ratio'] * (domain_criterion(domain_pred_sketches, sketch_domain_targets))
-        accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])
-        
-        domain_optim.zero_grad()         
-        total_domain_loss = domain_loss_images + domain_loss_sketches        
-        total_domain_loss.backward()        
-        domain_optim.step()                          
+        accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])    
+        total_domain_loss = domain_loss_images + domain_loss_sketches
+
+        '''OPTIMIZATION W.R.T. BOTH LOSSES'''
+        optimizer.zero_grad()  
+        total_loss = triplet_loss + total_domain_loss
+        total_loss.backward()
+        optimizer.step()  
+
 
         '''LOGGER'''
         time_end = time.time()
@@ -153,10 +153,9 @@ class Trainer():
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
                         'domain_net': domain_net.state_dict(),
-                        'optim_dict': optimizer.state_dict(),
-                        'domain_optim_dict': domain_optim.state_dict()},
+                        'optim_dict': optimizer.state_dict()},
                          checkpoint_dir = config['checkpoint_dir'], save_to_cloud = (epoch % config['save_to_cloud_every'] == 0))
-      print('Saved epoch to cloud!')
+      print('Saved epoch!')
       print('\n\n\n')
 
 

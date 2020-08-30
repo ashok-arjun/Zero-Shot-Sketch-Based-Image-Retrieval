@@ -27,7 +27,7 @@ def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
 #       torch.save(state, os.path.join(wandb.run.dir, file_name)) 
       wandb.save(file_name)
 
-def load_checkpoint(checkpoint, image_model, sketch_model, domain_net=None, optimizer=None, domain_optim=None):
+def load_checkpoint(checkpoint, image_model, sketch_model, domain_net=None, optimizer=None):
     if not os.path.exists(checkpoint):
         raise Exception("File {} doesn't exist".format(checkpoint))
     checkpoint = torch.load(checkpoint)
@@ -38,9 +38,6 @@ def load_checkpoint(checkpoint, image_model, sketch_model, domain_net=None, opti
       domain_net.load_state_dict(checkpoint['domain_net'])
     if optimizer:
       optimizer.load_state_dict(checkpoint['optim_dict'])
-    if domain_optim:
-      domain_optim.load_state_dict(checkpoint['domain_optim_dict'])
-
 
 def get_sketch_images_grids(sketches, images, similarity_scores, k, num_display):
 
