@@ -5,12 +5,23 @@ Using a semantic-aware network and a triplet loss along with a domain-classifyin
 # Results
 
 # Instructions
+<details>
+<summary>
+Installation
+</summary>
 
+```
+pip install -r requirements.txt
+```
+
+</details>
 <details>
 <summary>
 Data
 </summary>
-  
+
+Please download and extract this file:
+
 [The Sketchy dataset](http://transattr.cs.brown.edu/files/aligned_images.tar) - 1.8 GB
 
 </details>
