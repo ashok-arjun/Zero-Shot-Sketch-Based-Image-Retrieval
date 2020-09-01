@@ -12,7 +12,7 @@ from sklearn.metrics import average_precision_score
 import torch 
 import torch.nn as nn
 
-from model.net import BasicModel, DomainAdversarialNet
+from model.net import BasicModel 
 from model.dataloader import Dataloaders
 from utils import *
 
