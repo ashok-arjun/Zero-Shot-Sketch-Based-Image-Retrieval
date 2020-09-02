@@ -121,13 +121,15 @@ class SketchyTrainDataset(torch.utils.data.Dataset):
 class Dataloaders:
   def __init__(self, data_dir):
     self.train_labels = open(os.path.join(data_dir, '../train_labels.txt')).read().splitlines() 
-    print('Training on: ', self.train_labels)
     self.train_dict = label2index(self.train_labels)
     self.train_label_embeddings = np.load(os.path.join(data_dir,'train_embeddings.npy'))
 
     self.test_labels = open(os.path.join(data_dir, '../test_labels.txt')).read().splitlines() 
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
+    
+    print('Training on: ', self.train_labels)
+    print('Testing on: ', self.test_labels)
 
     self.train_dataset = SketchyTrainDataset(data_dir, self.train_labels, self.train_dict, self.train_label_embeddings, transforms = get_train_transforms())
     self.test_dataset_images = SketchyTestDataset(data_dir, self.test_labels, self.test_dict, self.test_label_embeddings, section='photos', transforms = get_test_transforms())

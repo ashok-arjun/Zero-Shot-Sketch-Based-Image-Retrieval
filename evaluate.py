@@ -18,7 +18,7 @@ from utils import *
 
 
 
-def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2):
+def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2index, k = 5, num_display = 2, proj_W = None):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
@@ -73,6 +73,9 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
   sketch_feature_predictions = sketch_feature_predictions.cpu().numpy() 
   image_label_indices = image_label_indices.cpu().numpy() 
   sketch_label_indices = sketch_label_indices.cpu().numpy() 
+  
+  '''IMPORTANT - SAE''' 
+  if proj_W: sketch_feature_predictions = sketch_feature_predictions @ proj_W
 
   distance = cdist(sketch_feature_predictions, image_feature_predictions, 'minkowski')
   similarity = 1.0/distance 
@@ -102,6 +105,7 @@ if __name__ == '__main__':
   parser.add_argument('--num_sketches', type=int, help='Number of random sketches to display', default = 0)
   parser.add_argument('--batch_size', type=int, help='Batch size to process the test sketches/photos', default = 1)
   parser.add_argument('--output_dir', help='Directory to save output sketch adn images', default = 'outputs')
+  parser.add_argument('--W_path', help='Path to the SAE projection matrix')
 
   args = parser.parse_args()
 
@@ -111,7 +115,8 @@ if __name__ == '__main__':
   image_model = BasicModel().to(device)
   sketch_model = BasicModel().to(device) 
   load_checkpoint(args.model, image_model, sketch_model)   # change later
-  sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches)
+  W = np.load(args.W_path) if args.W_path else None
+  sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches,proj_W = W)
   print('Average test mAP: ', test_mAP)
 
   if not os.path.isdir(args.output_dir):
