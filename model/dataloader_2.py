@@ -122,11 +122,11 @@ class SketchyTrainDataset(torch.utils.data.Dataset):
 
 class Dataloaders:
   def __init__(self, data_dir):
-    self.train_labels = open(os.path.join(data_dir, 'train_labels.txt')).read().splitlines() 
+    self.train_labels = open(os.path.join(data_dir, '../train_labels.txt')).read().splitlines() 
     self.train_dict = label2index(self.train_labels)
     self.train_label_embeddings = np.load(os.path.join(data_dir,'train_embeddings.npy'))
 
-    self.test_labels = open(os.path.join(data_dir, 'test_labels.txt')).read().splitlines() 
+    self.test_labels = open(os.path.join(data_dir, '../test_labels.txt')).read().splitlines() 
     self.test_dict = label2index(self.test_labels)
     self.test_label_embeddings = np.load(os.path.join(data_dir,'test_embeddings.npy')) 
 
