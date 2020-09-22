@@ -12,7 +12,7 @@ from sklearn.metrics import average_precision_score
 import torch 
 import torch.nn as nn
 
-from model.net import BasicModel, DomainAdversarialNet
+from model.net import BasicModel 
 from model.dataloader import Dataloaders
 from utils import *
 
@@ -96,7 +96,7 @@ def evaluate(batch_size, dataloader_fn, images_model, sketches_model, label2inde
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Evaluation of SBIR')
-  parser.add_argument('--model', help='Model checkpoint path', required=True)
+  parser.add_argument('--model', help='Model checkpoint path')
   parser.add_argument('--data', help='Data directory path. Directory should contain two folders - sketches and photos, along with 2 .txt files for the labels', required = True)
   parser.add_argument('--num_images', type=int, help='Number of random images to retrieve/display for every sketch', default = 0)
   parser.add_argument('--num_sketches', type=int, help='Number of random sketches to display', default = 0)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
   dataloaders = Dataloaders(args.data)
   image_model = BasicModel().to(device)
   sketch_model = BasicModel().to(device) 
-  load_checkpoint(args.model, image_model, sketch_model)   # change later
+  if args.model: load_checkpoint(args.model, image_model, sketch_model)  
   sketches, image_grids, test_mAP = evaluate(args.batch_size, dataloaders.get_test_dataloader, image_model, sketch_model, dataloaders.test_dict, k = args.num_images, num_display = args.num_sketches)
   print('Average test mAP: ', test_mAP)
 

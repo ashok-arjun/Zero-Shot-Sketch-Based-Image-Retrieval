@@ -10,7 +10,7 @@ import torchvision.utils as vutils
 import wandb
 
 
-from model.net import BasicModel, DomainAdversarialNet
+from model.net import BasicModel
 from model.dataloader import Dataloaders
 from model.layers import grad_reverse
 from evaluate import evaluate
@@ -32,35 +32,29 @@ class Trainer():
 
     image_model = BasicModel().to(device)
     sketch_model = BasicModel().to(device) 
-    domain_net = DomainAdversarialNet().to(device)    
     
     params = [param for param in image_model.parameters() if param.requires_grad == True]
     params.extend([param for param in sketch_model.parameters() if param.requires_grad == True])   
-    params.extend([param for param in domain_net.parameters() if param.requires_grad == True])
     optimizer = torch.optim.Adam(params, lr=config['lr'])
 
-    criterion = nn.TripletMarginLoss(margin = 0.5, p = 2)
-    domain_criterion = nn.BCELoss()
+    criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
 
     wandb_step = config['start_epoch'] * num_batches -1 
 
     if checkpoint:
-      load_checkpoint(checkpoint, image_model, sketch_model, domain_net, optimizer)
+      load_checkpoint(checkpoint, image_model, sketch_model, optimizer)
 
     print('Training...')    
     
 
     for epoch in range(config['start_epoch'], config['epochs']):
       accumulated_triplet_loss = RunningAverage()
-      accumulated_image_domain_loss = RunningAverage()
-      accumulated_sketch_domain_loss = RunningAverage()
       accumulated_iteration_time = RunningAverage()
 
       epoch_start_time = time.time()
 
       image_model.train() 
       sketch_model.train()
-      domain_net.train() 
       
       for iteration, batch in enumerate(train_dataloader):
         wandb_step += 1
@@ -80,57 +74,24 @@ class Trainer():
         triplet_loss = config['triplet_loss_ratio'] * criterion(pred_sketch_features, pred_positives_features, pred_negatives_features)
         accumulated_triplet_loss.update(triplet_loss, anchors.shape[0])        
 
-        '''DOMAIN ADVERSARIAL TRAINING''' # vannila generator for now. Later - add randomness in outputs of generator, or lower the label
-
-        '''DEFINE TARGETS'''
-          
-        image_domain_targets = torch.full((anchors.shape[0],1), 1, dtype=torch.float, device=device)
-        sketch_domain_targets = torch.full((anchors.shape[0],1), 0, dtype=torch.float, device=device)
-          
-        '''GET DOMAIN NET PREDICTIONS FOR INPUTS WITH G.R.L.'''
-        if epoch < 5:
-          grl_weight = 0
-        elif epoch < config['grl_threshold_epoch']:
-          grl_weight = epoch/config['grl_threshold_epoch'] 
-        else:
-          grl_weight = 1
-
-        domain_pred_p_images = domain_net(grad_reverse(pred_positives_features, grl_weight))
-        domain_pred_n_images = domain_net(grad_reverse(pred_negatives_features, grl_weight))
-        domain_pred_sketches = domain_net(grad_reverse(pred_sketch_features, grl_weight))
-
-        '''DOMAIN LOSS'''
-
-        domain_loss_images = config['domain_loss_ratio'] * (domain_criterion(domain_pred_p_images, image_domain_targets) + domain_criterion(domain_pred_n_images, image_domain_targets))
-        accumulated_image_domain_loss.update(domain_loss_images, anchors.shape[0])
-        domain_loss_sketches = config['domain_loss_ratio'] * (domain_criterion(domain_pred_sketches, sketch_domain_targets))
-        accumulated_sketch_domain_loss.update(domain_loss_sketches, anchors.shape[0])    
-        total_domain_loss = domain_loss_images + domain_loss_sketches
-
-        '''OPTIMIZATION W.R.T. BOTH LOSSES'''
+        '''OPTIMIZATION'''
         optimizer.zero_grad()  
-        total_loss = triplet_loss + total_domain_loss
-        total_loss.backward()
+        triplet_loss.backward()
         optimizer.step()  
 
 
         '''LOGGER'''
         time_end = time.time()
         accumulated_iteration_time.update(time_end - time_start)
-        eta_cur_epoch = str(datetime.timedelta(seconds = int(accumulated_iteration_time() * (num_batches - iteration))))        
+
         if iteration % config['print_every'] == 0:
+          eta_cur_epoch = str(datetime.timedelta(seconds = int(accumulated_iteration_time() * (num_batches - iteration)))) 
           print(datetime.datetime.now(pytz.timezone('Asia/Kolkata')).replace(microsecond = 0), end = ' ')
 
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
-          print('Triplet loss: %f(%f);' % (triplet_loss, accumulated_triplet_loss()))
+          print('Average Triplet loss: %f(%f);' % (triplet_loss, accumulated_triplet_loss()))
 
           wandb.log({'Average Triplet loss': accumulated_triplet_loss()}, step = wandb_step)
-
-
-          print('Sketch domain loss: %f; Image Domain loss: %f' % (accumulated_sketch_domain_loss(), accumulated_image_domain_loss()))
-          wandb.log({'Average Sketch Domain loss': accumulated_sketch_domain_loss()}, step = wandb_step)
-          wandb.log({'Average Image Domain loss': accumulated_image_domain_loss()}, step = wandb_step)
-
           
       '''END OF EPOCH'''
       epoch_end_time = time.time()
@@ -143,16 +104,9 @@ class Trainer():
 #       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
 #       wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
 
-#       save_checkpoint({'iteration': wandb_step, 
-#                         'image_model': image_model.state_dict(), 
-#                         'sketch_model': sketch_model.state_dict(),
-#                         'optim_dict': optimizer.state_dict()},
-#                         checkpoint_dir = 'experiments/', save_to_cloud = True)
-
       save_checkpoint({'iteration': wandb_step, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
-                        'domain_net': domain_net.state_dict(),
                         'optim_dict': optimizer.state_dict()},
                          checkpoint_dir = config['checkpoint_dir'], save_to_cloud = (epoch % config['save_to_cloud_every'] == 0))
       print('Saved epoch!')

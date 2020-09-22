@@ -12,13 +12,11 @@ from sklearn.metrics import average_precision_score
 import torch 
 import torch.nn as nn
 
-from model.net import BasicModel, DomainAdversarialNet
-from model.dataloader import Dataloaders
 from utils import *
 
 import pandas as pd
 
-def evaluate(batch_size, dataloaders, images_model, sketches_model, label2index, k = 5, num_display = 2):
+def evaluate(batch_size, dataloaders, images_model, sketches_model, label2index, k = 5, num_display = 2, proj_W = None):
   device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
   images_model = images_model.to(device); sketches_model = sketches_model.to(device)
   images_model.eval(); sketches_model.eval()
@@ -96,6 +94,9 @@ def evaluate(batch_size, dataloaders, images_model, sketches_model, label2index,
   sketch_feature_predictions = sketch_feature_predictions.cpu().numpy() 
   image_label_indices = image_label_indices.cpu().numpy() 
   sketch_label_indices = sketch_label_indices.cpu().numpy() 
+
+  '''IMPORTANT - SAE''' 
+  if proj_W: sketch_feature_predictions = sketch_feature_predictions @ proj_W
 
   distance = cdist(sketch_feature_predictions, image_feature_predictions, 'minkowski')
   similarity = 1.0/distance 
