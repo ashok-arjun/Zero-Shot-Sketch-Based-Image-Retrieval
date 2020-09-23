@@ -44,7 +44,7 @@ class Trainer():
     print('Training...')    
     
 
-    for epoch in range(config['start_epoch'], config['epochs']):
+    for epoch in range(config['epochs']):
       accumulated_triplet_loss = RunningAverage()
       accumulated_iteration_time = RunningAverage()
 
@@ -96,7 +96,7 @@ class Trainer():
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
-                         checkpoint_dir = config['checkpoint_dir'], save_to_cloud = (epoch % config['save_to_cloud_every'] == 0))
+                         checkpoint_dir = config['checkpoint_dir'])
       print('Saved epoch!')
       print('\n\n\n')
 
