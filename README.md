@@ -4,6 +4,10 @@
 
 The problem of retrieving images from a large-database using ambiguous sketches has been addressed. This problem has been addressed in the **zero-shot scenario**, where the test sketches/images are from **unseen classes** and the deep feature extractor's output embedding distances of the sketch and the image have been used to retrieve the top k closest images from the image database of the unseen classes.
 
+# Architecture Overview
+
+![](docs/zs-sbir-architecture.png)
+
 # Results on unseen(zero-shot) classes
 
 The below table presents a few qualitative results of our model on unseen test classes. The table presents the top 5 results from left to right.
@@ -23,11 +27,6 @@ The below table presents a few qualitative results of our model on unseen test c
 | Retrieved Image 1 | Retrieved Image 2 | Retrieved Image 3 | Retrieved Image 4 | Retrieved Image 5 |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
 |![](docs/examples/2/ext_201.jpg)|![](docs/examples/2/n02958343_13615.jpg)|![](docs/examples/2/n04166281_6690.jpg)|![](docs/examples/2/ext_389.jpg)|![](docs/examples/2/n04166281_241.jpg)|
-
-
-# Architecture Overview
-
-![](docs/zs-sbir-architecture.png)
 
 # Instructions
 <details>
