@@ -87,10 +87,10 @@ arguments:
                         folders - sketches and photos, along with 2 .txt files
                         for the labels
   --num_images NUM_IMAGES
-                        Number of random images to retrieve/display for every
+                        Number of random images to output for every
                         sketch
   --num_sketches NUM_SKETCHES
-                        Number of random sketches to display
+                        Number of random sketches to output
   --batch_size BATCH_SIZE
                         Batch size to process the test sketches/photos
   --output_dir OUTPUT_DIR
