@@ -5,20 +5,23 @@ The problem of retrieving images from a large-database using ambiguous sketches 
 # Results on unseen(zero-shot) classes
 
 The below table presents a few qualitative results of our model on unseen test classes. The table presents the top 5 results from left to right.
-
-| Example 1  |
+  
+| Query Sketch 1  |
 |:---------------:|
 |![](docs/s1.png)|
 
+| Retrieved Image 1 | Retrieved Image 2 | Retrieved Image 3 | Retrieved Image 4 | Retrieved Image 5 |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
 |![](docs/i11.png)|![](docs/i12.png)|![](docs/i13.png)|![](docs/i14.png)|![](docs/i15.png)|
 
-| Example 2  |
+| Query Sketch 2  |
 |:---------------:|
 |![](docs/s2.png)|
 
+| Retrieved Image 1 | Retrieved Image 2 | Retrieved Image 3 | Retrieved Image 4 | Retrieved Image 5 |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
 |![](docs/i21.png)|![](docs/i22.png)|![](docs/i23.png)|![](docs/i24.png)|![](docs/i25.png)|
+
 
 # Architecture Overview
 
@@ -27,6 +30,8 @@ The below table presents a few qualitative results of our model on unseen test c
 <summary>
 Installation
 </summary>
+
+Please execute the following command to install the required libraries:
 
 ```
 pip install -r requirements.txt
