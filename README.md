@@ -8,19 +8,19 @@ The below table presents a few qualitative results of our model on unseen test c
   
 | Query Sketch 1  |
 |:---------------:|
-|![](docs/s1.png)|
+|![](docs/examples/1/n03512147_1442-5.png)|
 
 | Retrieved Image 1 | Retrieved Image 2 | Retrieved Image 3 | Retrieved Image 4 | Retrieved Image 5 |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
-|![](docs/i11.png)|![](docs/i12.png)|![](docs/i13.png)|![](docs/i14.png)|![](docs/i15.png)|
+|![](docs/examples/1/ext_620.jpg)|![](docs/examples/1/ext_479.jpg)|![](docs/examples/1/ext_441.jpg)|![](docs/examples/1/ext_437.jpg)|![](docs/examples/1/n03512147_44302.jpg)|
 
 | Query Sketch 2  |
 |:---------------:|
-|![](docs/s2.png)|
+|![](docs/examples/2/n02958343_10092-1.png)|
 
 | Retrieved Image 1 | Retrieved Image 2 | Retrieved Image 3 | Retrieved Image 4 | Retrieved Image 5 |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
-|![](docs/i21.png)|![](docs/i22.png)|![](docs/i23.png)|![](docs/i24.png)|![](docs/i25.png)|
+|![](docs/examples/2/ext_201.jpg)|![](docs/examples/2/n02958343_13615.jpg)|![](docs/examples/2/n04166281_6690.jpg)|![](docs/examples/2/ext_389.jpg)|![](docs/examples/2/n04166281_241.jpg)|
 
 
 # Architecture Overview
