@@ -98,10 +98,10 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Evaluation of SBIR')
   parser.add_argument('--model', help='Model checkpoint path')
   parser.add_argument('--data', help='Data directory path. Directory should contain two folders - sketches and photos, along with 2 .txt files for the labels', required = True)
-  parser.add_argument('--num_images', type=int, help='Number of random images to retrieve/display for every sketch', default = 0)
-  parser.add_argument('--num_sketches', type=int, help='Number of random sketches to display', default = 0)
+  parser.add_argument('--num_images', type=int, help='Number of random images to output for every sketch', default = 0)
+  parser.add_argument('--num_sketches', type=int, help='Number of random sketches to output', default = 0)
   parser.add_argument('--batch_size', type=int, help='Batch size to process the test sketches/photos', default = 1)
-  parser.add_argument('--output_dir', help='Directory to save output sketch adn images', default = 'outputs')
+  parser.add_argument('--output_dir', help='Directory to save output sketch and images', default = 'outputs')
 
   args = parser.parse_args()
 
