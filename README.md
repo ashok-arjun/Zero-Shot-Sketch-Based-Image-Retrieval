@@ -61,6 +61,8 @@ Please download and extract this file:
 Training
 </summary>
 
+To be added
+
 </details>
 
 <details>
@@ -68,6 +70,9 @@ Training
 <summary>
 Inference
 </summary>
+
+To be added
+
 </details>
 
 # References
