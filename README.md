@@ -11,6 +11,8 @@ The below table presents a few qualitative results of our model, which was not t
 |![](docs/s1.png)|![](docs/i11.png)|![](docs/i12.png)|![](docs/i13.png)|![](docs/i14.png)|![](docs/i15.png)|
 |![](docs/s2.png)|![](docs/i21.png)|![](docs/i22.png)|![](docs/i23.png)|![](docs/i24.png)|![](docs/i25.png)|
 
+# Architecture Overview
+
 # Instructions
 <details>
 <summary>
