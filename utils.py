@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import torch
-import wandb
 from torchvision.utils import make_grid
 
 class RunningAverage():
@@ -17,13 +16,10 @@ class RunningAverage():
     return self.sum/self.count  
 
 
-def save_checkpoint(state, checkpoint_dir, save_to_cloud = False):
+def save_checkpoint(state, checkpoint_dir):
     file_name = 'last.pth.tar'
     if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
-#     torch.save(state, os.path.join(checkpoint_dir, file_name))    
-    torch.save(state, os.path.join(wandb.run.dir, file_name)) 
-    if save_to_cloud:
-      wandb.save(file_name)
+    torch.save(state, os.path.join(checkpoint_dir, file_name))
 
 def load_checkpoint(checkpoint, image_model, sketch_model, optimizer=None):
     if not os.path.exists(checkpoint):
