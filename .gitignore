@@ -1,6 +1,5 @@
 /runs/*
 /experiments/*
-/wandb/*
 *.mat
 *.zip
 *.pyc
