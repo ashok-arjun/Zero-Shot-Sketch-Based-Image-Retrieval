@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.utils as vutils 
-import wandb
 
 
 from model.net import BasicModel
@@ -39,8 +38,6 @@ class Trainer():
 
     criterion = nn.TripletMarginLoss(margin = 1.0, p = 2)
 
-    wandb_step = config['start_epoch'] * num_batches -1 
-
     if checkpoint:
       load_checkpoint(checkpoint, image_model, sketch_model, optimizer)
 
@@ -57,8 +54,6 @@ class Trainer():
       sketch_model.train()
       
       for iteration, batch in enumerate(train_dataloader):
-        wandb_step += 1
-
         time_start = time.time()        
 
         '''GETTING THE DATA'''
@@ -91,20 +86,13 @@ class Trainer():
           print('Epoch: %d [%d / %d] ; eta: %s' % (epoch, iteration, num_batches, eta_cur_epoch))
           print('Average Triplet loss: %f(%f);' % (triplet_loss, accumulated_triplet_loss()))
 
-          wandb.log({'Average Triplet loss': accumulated_triplet_loss()}, step = wandb_step)
-          
+        
       '''END OF EPOCH'''
       epoch_end_time = time.time()
       print('Epoch %d complete, time taken: %s' % (epoch, str(datetime.timedelta(seconds = int(epoch_end_time - epoch_start_time)))))
       torch.cuda.empty_cache()
 
-      
-#       sketches, image_grids, test_mAP = evaluate(config['test_batch_size'], self.dataloaders.get_test_dataloader, image_model, sketch_model, self.dataloaders.test_dict, k = 5, num_display = 5)
-#       wandb.log({'Sketches': [wandb.Image(image) for image in sketches]}, step = wandb_step)
-#       wandb.log({'Retrieved Images': [wandb.Image(image) for image in image_grids]}, step = wandb_step)
-#       wandb.log({'Average Test mAP': test_mAP}, step = wandb_step)
-
-      save_checkpoint({'iteration': wandb_step, 
+      save_checkpoint({'iteration': iteration + epoch * num_batches, 
                         'image_model': image_model.state_dict(), 
                         'sketch_model': sketch_model.state_dict(),
                         'optim_dict': optimizer.state_dict()},
