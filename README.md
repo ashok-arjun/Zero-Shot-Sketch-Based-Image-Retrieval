@@ -71,7 +71,31 @@ To be added
 Inference
 </summary>
 
-To be added
+The file ```evaluate.py``` can be invoked with the following args:
+
+```
+usage: evaluate.py [-h] [--model MODEL] --data DATA [--num_images NUM_IMAGES]
+                   [--num_sketches NUM_SKETCHES] [--batch_size BATCH_SIZE]
+                   [--output_dir OUTPUT_DIR]
+
+Evaluation of SBIR
+
+arguments:
+  -h, --help            show this help message and exit
+  --model MODEL         Model checkpoint path
+  --data DATA           Data directory path. Directory should contain two
+                        folders - sketches and photos, along with 2 .txt files
+                        for the labels
+  --num_images NUM_IMAGES
+                        Number of random images to retrieve/display for every
+                        sketch
+  --num_sketches NUM_SKETCHES
+                        Number of random sketches to display
+  --batch_size BATCH_SIZE
+                        Batch size to process the test sketches/photos
+  --output_dir OUTPUT_DIR
+                        Directory to save output sketch and images
+```
 
 </details>
 
