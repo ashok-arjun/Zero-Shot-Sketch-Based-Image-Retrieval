@@ -27,6 +27,8 @@ The below table presents a few qualitative results of our model on unseen test c
 
 # Architecture Overview
 
+![](docs/zs-sbir-architecture.png)
+
 # Instructions
 <details>
 <summary>
