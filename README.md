@@ -4,6 +4,10 @@
 
 The problem of retrieving images from a large-database using ambiguous sketches has been addressed. This problem has been addressed in the **zero-shot scenario**, where the test sketches/images are from **unseen classes** and the deep feature extractor's output embedding distances of the sketch and the image have been used to retrieve the top k closest images from the image database of the unseen classes.
 
+The standard **triplet loss** has been used, along with a **domain loss**, which is trained to differentiate between sketches and images.
+
+The embedding is passed in to **gradient reversal layer** <sup>1</sup>, and then into a domain-classifier network, and then into the domain loss. The **gradient reversal layer** acts as an identity layer in the forward pass, and reverses the gradient in the backward pass which results in the main network learning a **domain-agnostic representation** i.e. to fool the domain-classifier network.
+
 # Architecture Overview
 
 ![](docs/zs-sbir-architecture.png)
@@ -66,4 +70,6 @@ Inference
 </summary>
 </details>
 
+# References
 
+1. Ganin, Yaroslav et al. "Domain-Adversarial Training Of Neural Networks". Journal of Machine Learning Research, 2016, pp. 1-35, url:http://jmlr.org/papers/v17/15-239.html
