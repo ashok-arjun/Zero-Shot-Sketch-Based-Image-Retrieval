@@ -37,7 +37,7 @@ The below table presents a few qualitative results of our model on unseen test c
 # Instructions
 <details>
 <summary>
-  <br>Installation</br>
+  <b>Installation</b>
 </summary>
 
 Please execute the following command to install the required libraries:
@@ -49,7 +49,7 @@ pip install -r requirements.txt
 </details>
 <details>
 <summary>
-<br>Data</br>
+<b>Data</b>
 </summary>
 
 Please download and extract this file:
@@ -60,7 +60,7 @@ Please download and extract this file:
 <details>
 
 <summary>
-<br>Training</br>
+<b>Training</b>
 </summary>
 
 To be added
@@ -70,7 +70,7 @@ To be added
 <details>
 
 <summary>
-<br>Inference</br>
+<b>Inference</b>
 </summary>
 
 The file ```evaluate.py``` can be invoked with the following args:
