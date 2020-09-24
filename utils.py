@@ -21,13 +21,14 @@ def save_checkpoint(state, checkpoint_dir):
     if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
     torch.save(state, os.path.join(checkpoint_dir, file_name))
 
-def load_checkpoint(checkpoint, image_model, sketch_model, optimizer=None):
+def load_checkpoint(checkpoint, image_model, sketch_model, domain_model=None, optimizer=None):
     if not os.path.exists(checkpoint):
         raise Exception("File {} doesn't exist".format(checkpoint))
     checkpoint = torch.load(checkpoint)
     print('Loading the models from the end of net iteration %d' % (checkpoint['iteration']))
     image_model.load_state_dict(checkpoint['image_model'])
     sketch_model.load_state_dict(checkpoint['sketch_model'])
+    if domain_model: domain_model.load_state_dict(checkpoint['domain_model'])
     if optimizer:
       optimizer.load_state_dict(checkpoint['optim_dict'])
 
