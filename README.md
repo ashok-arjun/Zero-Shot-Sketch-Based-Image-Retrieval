@@ -12,7 +12,7 @@ The embedding is passed in to **gradient reversal layer** <sup>1</sup>, and then
 
 ![](docs/zs-sbir-architecture.png)
 
-<sub>† Diagram created by Arjun Ashok using [app.diagrams.net](app.diagrams.net)</sub> 
+<sub>† Diagram created by Arjun Ashok using [app.diagrams.net](http://app.diagrams.net)</sub> 
 
 # Results on unseen(zero-shot) classes
 
