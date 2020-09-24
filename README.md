@@ -63,8 +63,40 @@ Please download and extract this file:
 <b>Training</b>
 </summary>
 
-To be added
+The file ```train.py``` can be invoked with the following arguments:
 
+```
+usage: train.py [-h] --data_dir DATA_DIR --batch_size BATCH_SIZE
+                --checkpoint_dir CHECKPOINT_DIR --epochs EPOCHS
+                [--domain_loss_ratio DOMAIN_LOSS_RATIO]
+                [--triplet_loss_ratio TRIPLET_LOSS_RATIO]
+                [--grl_threshold_epoch GRL_THRESHOLD_EPOCH]
+                [--print_every PRINT_EVERY]
+
+Training of SBIR
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_dir DATA_DIR   Data directory path. Directory should contain two
+                        folders - sketches and photos, along with 2 .txt files
+                        for the labels
+  --batch_size BATCH_SIZE
+                        Batch size to process the train sketches/photos
+  --checkpoint_dir CHECKPOINT_DIR
+                        Directory to save checkpoints
+  --epochs EPOCHS       Number of epochs
+  --domain_loss_ratio DOMAIN_LOSS_RATIO
+                        Domain loss weight
+  --triplet_loss_ratio TRIPLET_LOSS_RATIO
+                        Triplet loss weight
+  --grl_threshold_epoch GRL_THRESHOLD_EPOCH
+                        Threshold epoch for GRL lambda
+  --print_every PRINT_EVERY
+                        Logging interval in iterations
+```
+
+It is advised to use a GPU for training. The code automatically detects and uses a GPU, if available.
+ 
 </details>
 
 <details>
@@ -98,6 +130,8 @@ arguments:
   --output_dir OUTPUT_DIR
                         Directory to save output sketch and images
 ```
+
+It is advised to use a GPU for evaluation. The code automatically detects and uses a GPU, if available.
 
 </details>
 
