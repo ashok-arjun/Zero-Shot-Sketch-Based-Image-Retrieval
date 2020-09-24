@@ -6,7 +6,7 @@ The problem of retrieving images from a large-database using ambiguous sketches 
 
 The standard **triplet loss** has been used, along with a **domain loss**, which is trained to differentiate between sketches and images.
 
-The embedding is passed in to **gradient reversal layer** <sup>1</sup>, and then into a domain-classifier network, and then into the domain loss. The **gradient reversal layer** acts as an identity layer in the forward pass, and reverses the gradient in the backward pass which results in the main network learning a **domain-agnostic representation** i.e. to fool the domain-classifier network.
+The embedding is passed in to **gradient reversal layer** <sup>1</sup>, and then into a domain-classifier network, and then into the domain loss. The **gradient reversal layer** acts as an **identity layer in the forward pass**, and **multiplies the gradient by -1 in the backward pass** which results in the main network learning a **domain-agnostic representation** i.e. to fool the domain-classifier network.
 
 # Architecture Overview
 
