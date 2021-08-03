@@ -52,9 +52,7 @@ pip install -r requirements.txt
 <b>Data</b>
 </summary>
 
-Please download and extract this file:
-
-[The Sketchy dataset](http://transattr.cs.brown.edu/files/aligned_images.tar) - 1.8 GB
+Execute ```bash download_data.sh```
 
 </details>
 <details>
