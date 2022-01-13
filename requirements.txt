@@ -1,6 +1,6 @@
 torchvision==0.7.0+cu101
 torch==1.6.0+cu101
-numpy==1.18.5
+numpy==1.21.0
 pytz==2018.9
 scipy==1.4.1
 smart_open==2.1.1
