@@ -2,7 +2,7 @@ torchvision==0.7.0+cu101
 torch==1.6.0+cu101
 numpy==1.18.5
 pytz==2018.9
-scipy==1.4.1
+scipy==1.10.0
 smart_open==2.1.1
 Pillow==9.0.0
 scikit_learn==0.23.2
